@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apartment Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lobster&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+         body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 1.5em 0;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        header h1 {
+            font-family: 'Lobster', cursive;
+            font-size: 3em;
+            margin: 0;
+        }
+        nav {
+            background-color: #333;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+        }
+        nav ul li {
+            margin: 0 15px;
+        }
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            padding: 14px 20px;
+            display: block;
+            font-weight: bold;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        nav ul li a:hover {
+            background-color: #575757;
+            color: #FFD700;
+        }
+        .container {
+            padding: 40px 20px;
+            display: none;
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .home, .about{
+            text-align: center;
+        }
+        .home h2, .about h2 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            font-family: 'Lobster', cursive;
+            color: #4CAF50;
+        }
+        .home p, .about p {
+            font-size: 1.2em;
+            line-height: 1.6;
+            font-style: italic;
+        }
+        .room {
+            border: 1px solid #ddd;
+            margin-bottom: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .room:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        .room img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        .room h2 {
+            margin-top: 0;
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #4CAF50;
+        }
+        .room p {
+            font-size: 1.1em;
+        }
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 1em 0;
+            position: fixed;
+            width: 100%;
+            bottom: 0;
+            box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.1);
+            font-family: 'Roboto', sans-serif;
+        }
+        footer p {
+            margin: 0;
+            font-weight: 300;
+        }
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.5);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            left: 0;
+        }
+        .login-box {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .login-box h2 {
+            font-family: 'Lobster', cursive;
+            font-size: 2.5em;
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+        .login-box input[type="text"], .login-box input[type="password"], .login-box input[type="email"], .login-box input[type="number"], .login-box input[type="date"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        .login-box input[type="age"] {
+            border: 1px solid #ccc; 
+            background-color: #fff; 
+        }
+        .login-box button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .login-box button:hover {
+            background-color: #45a049;
+        }
+        .edit-button {
+            margin-top: 10px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            border: 1px solid;
+            border-color: black;
+            background-color: #4CAF50; 
+            color: white; 
+        }
+        .edit-button:hover {
+            background-color: #79798b; 
+            transition-duration: 0.3s; 
+        }
+        .form-container {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .form-container input[type="text"], .form-container input[type="number"], .form-container input[type="email"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        .form-container button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .form-container button:hover {
+            background-color: #45a049;
+        }
+        .toggle-link {
+            color: #4CAF50;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container" id="login-container">
+        <div class="login-box">
+            <h2>Login</h2>
+            <input type="email" id="login-email" placeholder="Email">
+            <input type="password" id="login-password" placeholder="Password">
+            <button onclick="login()">Login</button>
+            <p><span class="toggle-link" onclick="resetPassword()">Forgot your password?</span></p>
+            <p>Don't have an account? <span class="toggle-link" onclick="toggleLoginRegister()">Register</span></p>
+        </div>
+        <div class="login-box" id="register-box" style="display: none;">
+            <h2>Register</h2>
+            <input type="email" id="client-email" placeholder="Email">
+            <input type="password" id="client-password" placeholder="Password">
+            <input type="text" id="client-name" placeholder="Name">
+            <input type="number" id="client-age" placeholder="Age">
+            <input type="text" id="client-phone" placeholder="Phone Number">
+            <input type="date" id="client-date" placeholder="Date Started">
+            
+            <br>
+            <br>
+            <select id="client-role">
+                <option value="" disabled selected>Select Role</option>
+                <option value="landlord">Landlord</option>
+                <option value="tenant">Tenant</option>
+            </select>
+            <button onclick="addClient()">Register</button>
+            <p>Already have an account? <span class="toggle-link" onclick="toggleLoginRegister()">Login</span></p>
+        </div>
+    </div>
+
+    <header>
+        <h1>Apartment Manager</h1>
+    </header>
+    <nav>
+        <ul>
+            <li><a onclick="showSection('home')">Home</a></li>
+            <li><a onclick="showSection('listings')">Tenant Info</a></li>
+            <li><a onclick="showSection('about')">About</a></li>
+            <li><a onclick="showSection('contact')">Room Details</a></li>
+            <li><a onclick="logout()">Logout</a></li>
+        </ul>
+    </nav>
+    <div class="container home" id="home">
+
+    <footer>
+        <p>&copy; 2024 Apartment Manager. All rights reserved.</p>
+    </footer>
+
+    <script>
+        const { createClient } = supabase;
+        const supabaseUrl = 'https://oqeboxqhdunykevlsngo.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xZWJveHFoZHVueWtldmxzbmdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTcxMjM1ODYsImV4cCI6MjAzMjY5OTU4Nn0.l59O6fS7QE9ldJziNYYzSNMeNmW6fnqDcJ2wImvaoIk';
+        const connect = createClient(supabaseUrl, supabaseKey);
+
+        function showSection(sectionId) {
+            const sections = document.querySelectorAll('.container');
+            sections.forEach(section => section.style.display = 'none');
+            document.getElementById(sectionId).style.display = 'block';
+        }
+
+        async function addClient() {
+            const name = document.getElementById('client-name').value;
+            const age = parseInt(document.getElementById('client-age').value);
+            const phone = document.getElementById('client-phone').value;
+            const email = document.getElementById('client-email').value;
+            const date = document.getElementById('client-date').value;
+            const password = document.getElementById('client-password').value;
+            const role = document.getElementById('client-role').value;
+
+            const { data, error } = await connect.from('clients').insert({
+                name: name,
+                age: age,
+                phone_number: phone,
+                gmail: email,
+                date_started: date,
+                password: password,
+                role: role
+            });
+
+            if (error) {
+                console.error('Error adding client:', error);
+                return;
+            }
+        }
+
+        function login() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            if (email === 'hoss@gmail.com' && password === 'hoss') {
+                window.location.href = 'Webdev.html';
+                document.getElementById('login-container').style.display = 'none';
+                showSection('home');
+                fetchClients(); // Assuming a function to fetch client data
+            } else if (email === 'ssoh@gmail.com' && password === 'ssoh') {
+                window.location.href = 'Tenant.html';
+                document.getElementById('login-container').style.display = 'none';
+                showSection('home');
+            } else {
+                alert('Invalid username or password');
+            }
+        }
+
+    async function resetPassword() {
+    const email = prompt('Enter the email of the client whose password you want to update:');
+    if (!email) return; 
+    
+    const newPassword = prompt('Enter the new password:');
+    if (!newPassword) return; 
+    
+    try {
+        const { error: updateError } = await connect
+            .from('clients')
+            .update({ password: newPassword })
+            .eq('gmail', email); 
+    
+        if (updateError) {
+            throw updateError;
+        }
+    
+        alert('Password updated successfully');
+        fetchClients(); 
+    } catch (error) {
+        console.error('Error updating password:', error.message);
+    }
+}
+
+        function logout() {
+            document.getElementById('login-container').style.display = 'flex';
+            showSection('home');
+            document.getElementById('login-email').focus();
+            document.getElementById('login-password').value = '';
+        }
+
+        function toggleLoginRegister() {
+            const loginBox = document.querySelector('.login-box');
+            const registerBox = document.getElementById('register-box');
+            if (loginBox.style.display === 'none') {
+                loginBox.style.display = 'block';
+                registerBox.style.display = 'none';
+            } else {
+                loginBox.style.display = 'none';
+                registerBox.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

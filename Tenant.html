@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apartment Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lobster&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+         body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 1.5em 0;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        header h1 {
+            font-family: 'Lobster', cursive;
+            font-size: 3em;
+            margin: 0;
+        }
+        nav {
+            background-color: #333;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+        }
+        nav ul li {
+            margin: 0 15px;
+        }
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            padding: 14px 20px;
+            display: block;
+            font-weight: bold;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        nav ul li a:hover {
+            background-color: #575757;
+            color: #FFD700;
+        }
+        .container {
+            padding: 40px 20px;
+            display: none;
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .home, .about{
+            text-align: center;
+        }
+        .home h2, .about h2 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            font-family: 'Lobster', cursive;
+            color: #4CAF50;
+        }
+        .home p, .about p {
+            font-size: 1.2em;
+            line-height: 1.6;
+            font-style: italic;
+        }
+        .room {
+            border: 1px solid #ddd;
+            margin-bottom: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .room:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        .room img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        .room h2 {
+            margin-top: 0;
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #4CAF50;
+        }
+        .room p {
+            font-size: 1.1em;
+        }
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 1em 0;
+            position: fixed;
+            width: 100%;
+            bottom: 0;
+            box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.1);
+            font-family: 'Roboto', sans-serif;
+        }
+        footer p {
+            margin: 0;
+            font-weight: 300;
+        }
+        .edit-button {
+            margin-top: 10px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            border: 1px solid;
+            border-color: black;
+            background-color: #4CAF50; 
+            color: white; 
+        }
+        .edit-button:hover {
+            background-color: #79798b; 
+            transition-duration: 0.3s; 
+        }
+        .form-container {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .form-container input[type="text"], .form-container input[type="number"], .form-container input[type="email"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        .form-container button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .form-container button:hover {
+            background-color: #45a049;
+        }
+        .toggle-link {
+            color: #4CAF50;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Apartment Manager</h1>
+    </header>
+    <nav>
+        <ul>
+            <li><a onclick="showSection('home')">Home</a></li>
+            <li><a onclick="showSection('about')">Bills</a></li>s
+            <li><a onclick="logout()">Logout</a></li>
+        </ul>
+    </nav>
+    <div class="container home" id="home">
+        <h2>Welcome to Apartment Manager</h2>
+        <p>Find your perfect room from our listings below. We provide the best options available in the apartment to suit all your needs.</p>
+        <p>Feel free to contact us with the following contact details:</p>
+        <p>Email: hoss@gmail.com || Contact Number: 09999999</p>
+    </div>
+    <div class="container listings" id="listings">
+        <div class="form-container">
+        </div>
+    </div>
+    <div class="container about" id="about">
+        <div id="clients-list">
+            <!-- Clients will be listed here -->
+        </div>
+    </div>
+    <div class="container contact" id="contact">
+        <div class="room" data-room="1">
+
+        </div>
+    </div>
+    <footer>
+        <p>&copy; 2024 Apartment Manager. All rights reserved.</p>
+    </footer>
+
+    <script>
+        const { createClient } = supabase;
+        const supabaseUrl = 'https://oqeboxqhdunykevlsngo.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xZWJveHFoZHVueWtldmxzbmdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTcxMjM1ODYsImV4cCI6MjAzMjY5OTU4Nn0.l59O6fS7QE9ldJziNYYzSNMeNmW6fnqDcJ2wImvaoIk';
+        const connect = createClient(supabaseUrl, supabaseKey);
+
+        function showSection(sectionId) {
+            const sections = document.querySelectorAll('.container');
+            sections.forEach(section => section.style.display = 'none');
+            document.getElementById(sectionId).style.display = 'block';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+                showSection('home');
+                fetchClients();
+        });
+
+        async function fetchClients() {
+            const { data, error } = await connect.from('clients').select().eq('gmail', 'ssoh@gmail.com');
+            if (error) {
+                console.error('Error fetching clients:', error);
+                return;
+            }
+
+            const clientsList = document.getElementById('clients-list');
+            clientsList.innerHTML = '';
+
+            data.forEach(client => {
+                const clientDiv = document.createElement('div');
+                clientDiv.className = 'room';
+                clientDiv.innerHTML = `
+                    <h2>${client.name}</h2>
+                    <p>Bills: ₱${client.bills}</p>
+                `;
+                clientsList.appendChild(clientDiv);
+            });
+        }
+
+        async function logout() {
+            const { error } = await connect.auth.signOut();
+            if (error) {
+                console.error('Error during logout:', error);
+                return;
+            }
+            window.location.href = 'login.html'; 
+        }
+    </script>
+</body>
+</html>
