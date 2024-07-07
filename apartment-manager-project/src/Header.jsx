@@ -1,13 +1,12 @@
-import './Header.css'
-function Header(){
+import React from 'react';
 
-    return(
-        <header>
-            <h1>Apartment Manager</h1>
-        </header>
 
-        
-    );
+function Header() {
+  return (
+    <header>
+      <h1>Apartment Manager</h1>
+    </header>
+  );
 }
 
-export default Header
+export default Header;

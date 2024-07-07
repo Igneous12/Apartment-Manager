@@ -1,12 +1,12 @@
-import './Footer.css'
-function Footer(){
+import React from 'react';
 
-    return(
-     <footer>
-         <p>&copy; 2024 Apartment Manager. All rights reserved.</p>
-     </footer>
-        
-    );
+
+function Footer() {
+  return (
+    <footer>
+      <p>&copy; 2024 Apartment Manager. All rights reserved.</p>
+    </footer>
+  );
 }
 
-export default Footer
+export default Footer;
