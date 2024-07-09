@@ -9,8 +9,8 @@
     <link rel="stylesheet" type="text/css" href="css.css">
 </head>
 <body>
-
-    <header>
+    
+<header>
         <h1>Apartment Manager</h1>
     </header>
     <nav>
@@ -19,6 +19,7 @@
             <li><a onclick="showSection('listings')">Tenant Info</a></li>
             <li><a onclick="showSection('about')">About</a></li>
             <li><a onclick="showSection('contact')">Room Details</a></li>
+            <li><a onclick="showSection('booking-requests')">Booking Requests</a></li>
             <li><a onclick="logout()">Logout</a></li>
         </ul>
     </nav>
@@ -56,6 +57,12 @@
             <!-- Rooms will be listed here -->
         </div>
     </div>
+    <div class="container booking-requests" id="booking-requests">
+        <h2>Booking Requests</h2>
+        <div id="booking-requests-list">
+            <!-- Booking requests will be listed here -->
+        </div>
+    </div>
     <footer>
         <p>&copy; 2024 Apartment Manager. All rights reserved.</p>
     </footer>
@@ -76,6 +83,7 @@
             showSection('home');
             fetchClients();
             fetchRooms();
+            fetchBookingRequests();
         });
     
         async function fetchClients() {
@@ -145,7 +153,7 @@
             const room_size = document.getElementById('room-size').value;
     
             const { data, error } = await connect.from('room_details').insert([
-                { room_num: room_num, room_price: room_price, room_size: room_size }
+                { room_num: room_num, room_price: room_price, room_size: room_size, status: 'available' }
             ]);
     
             if (error) {
@@ -173,6 +181,7 @@
                     <h2>Room Number: ${room_details.room_num}</h2>
                     <p>Price: ₱${room_details.room_price}</p>
                     <p>Room Size: ${room_details.room_size}</p>
+                    <p>Status: ${room_details.status}</p>
                     <button onclick="editRoom(${room_details.room_num})">Edit</button>
                     <button onclick="deleteRoom(${room_details.room_num})">Delete</button>
                 `;
@@ -181,7 +190,7 @@
         }
     
         async function editRoom(room_num) {
-            const field = prompt("Enter the field you want to update (room_num, room_price, room_size):");
+            const field = prompt("Enter the field you want to update (room_num, room_price, room_size, status):");
             const newValue = prompt('Enter the new value for ${field}:');
     
             const updatedField = {};
@@ -208,14 +217,63 @@
             fetchRooms();
         }
     
-        async function logout() {
-            const { error } = await connect.auth.signOut();
+        async function fetchBookingRequests() {
+            const { data, error } = await connect.from('booking_requests').select();
             if (error) {
-                console.error('Error during logout:', error);
+                console.error('Error fetching booking requests:', error);
                 return;
             }
-            window.location.href = 'login.html'; 
+    
+            const bookingRequestsList = document.getElementById('booking-requests-list');
+            bookingRequestsList.innerHTML = '';
+    
+            data.forEach(request => {
+                const requestDiv = document.createElement('div');
+                requestDiv.className = 'booking-request';
+                requestDiv.innerHTML = `
+                    <h2>Booking Request</h2>
+                    <p>Tenant Name: ${request.tenant_name}</p>
+                    <p>Room Number: ${request.room_num}</p>
+                    <p>Status: ${request.status}</p>
+                    <button onclick="approveRequest(${request.id})">Approve</button>
+                    <button onclick="rejectRequest(${request.id})">Reject</button>
+                `;
+                bookingRequestsList.appendChild(requestDiv);
+            });
         }
+    
+        async function approveRequest(id) {
+            const { data, error } = await connect.from('booking_requests').update({ status: 'approved' }).eq('id', id);
+            if (error) {
+                console.error('Error approving request:', error);
+                return;
+            }
+            fetchBookingRequests();
+        }
+    
+        async function rejectRequest(id) {
+            const { data, error } = await connect.from('booking_requests').update({ status: 'rejected' }).eq('id', id);
+            if (error) {
+                console.error('Error rejecting request:', error);
+                return;
+            }
+            fetchBookingRequests();
+        }
+    
+        function logout() {
+    const { auth } = createClient(supabaseUrl, supabaseKey);
+
+    auth.signOut().then(response => {
+        if (response.error) {
+            console.error('Error during logout:', response.error.message);
+            return;
+        }
+        // Redirect or perform any other action after logout
+        window.location.href = 'login.html';
+    }).catch(error => {
+        console.error('Error during logout:', error.message);
+    });
+}
     </script>
 </body>
 </html>

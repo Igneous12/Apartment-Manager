@@ -3,46 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Apartment Manager</title>
+    <title>Tenant Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Lobster&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" type="text/css" href="css.css">
 </head>
 <body>
     <header>
-        <h1>Apartment Manager</h1>
+        <h1>Tenant Dashboard</h1>
     </header>
     <nav>
         <ul>
             <li><a onclick="showSection('home')">Home</a></li>
-            <li><a onclick="showSection('about')">Bills</a></li>
-            <li><a onclick="showSection('contact')">Room Details</a></li>
+            <li><a onclick="showSection('profile')">Profile</a></li>
+            <li><a onclick="showSection('payment')">Payment History</a></li>
+            <li><a onclick="showSection('maintenance')">Maintenance Requests</a></li>
+            <li><a onclick="showSection('community')">Community</a></li>
+            <li><a onclick="showSection('feedback')">Feedback</a></li>
+            <li><a onclick="showSection('booking')">Book a Room</a></li>
             <li><a onclick="logout()">Logout</a></li>
         </ul>
     </nav>
     <div class="container home" id="home">
-        <h2>Welcome to Apartment Manager</h2>
-        <p>Find your perfect room from our listings below. We provide the best options available in the apartment to suit all your needs.</p>
-        <img src="https://www.moneycrashers.com/wp-content/uploads/2023/08/good-landlord-tips-advice-responsibilities.jpg" alt="Picture raba ni" width="1125" height="751">
-        <p>Feel free to contact us with the following contact details:</p>
-        <p>Email: hoss@gmail.com || Contact Number: 09999999</p>
+        <h2>Welcome to Your Dashboard</h2>
+        <p>Manage your profile, Book A room, and more.</p>
     </div>
-    <div class="container listings" id="listings">
+    <div class="container profile" id="profile">
+        <h2>Profile</h2>
         <div class="form-container">
+            <input type="text" id="profile-name" placeholder="Name">
+            <input type="text" id="profile-phone" placeholder="Phone Number">
+            <input type="email" id="profile-email" placeholder="Email">
+            <button onclick="updateProfile()">Update Profile</button>
         </div>
     </div>
-    <div class="container about" id="about">
-        <div id="clients-list">
-            <!-- Clients will be listed here -->
+    <div class="container payment" id="payment">
+        <h2>Payment History</h2>
+        <div id="payment-history-list">
+            <!-- Payment history will be listed here -->
         </div>
     </div>
-    <div class="container contact" id="contact">
-        <div class="room" data-room="1">
-
+    <div class="container maintenance" id="maintenance">
+        <h2>Maintenance Requests</h2>
+        <div class="form-container">
+            <input type="text" id="maintenance-description" placeholder="Description">
+            <button onclick="submitMaintenanceRequest()">Submit Request</button>
+        </div>
+        <div id="maintenance-requests-list">
+            <!-- Maintenance requests will be listed here -->
+        </div>
+    </div>
+    <div class="container community" id="community">
+        <h2>Community</h2>
+        <div id="community-board">
+            <!-- Community bulletin board will be here -->
+        </div>
+    </div>
+    <div class="container feedback" id="feedback">
+        <h2>Feedback</h2>
+        <div class="form-container">
+            <textarea id="feedback-text" placeholder="Your feedback"></textarea>
+            <button onclick="submitFeedback()">Submit Feedback</button>
+        </div>
+    </div>
+    <div class="container booking" id="booking">
+        <h2>Book a Room</h2>
+        <div id="rooms-list">
+            <!-- Available rooms will be listed here -->
         </div>
     </div>
     <footer>
-        <p>&copy; 2024 Apartment Manager. All rights reserved.</p>
+        <p>&copy; 2024 Tenant Dashboard. All rights reserved.</p>
     </footer>
 
     <script>
@@ -58,39 +89,170 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-                showSection('home');
-                fetchClients();
+            showSection('home');
+            fetchProfile();
+            fetchLeaseAgreements();
+            fetchPaymentHistory();
+            fetchMaintenanceRequests();
+            fetchRooms();
         });
 
-        async function fetchClients() {
-            const { data, error } = await connect.from('clients').select().eq('gmail', 'ssoh@gmail.com');
+        async function fetchProfile() {
+            const { data, error } = await connect.from('clients').select().eq('role', 'tenant');
             if (error) {
-                console.error('Error fetching clients:', error);
+                console.error('Error fetching profile:', error);
                 return;
             }
 
-            const clientsList = document.getElementById('clients-list');
-            clientsList.innerHTML = '';
+            const profile = data[0];
+            document.getElementById('profile-name').value = profile.name;
+            document.getElementById('profile-phone').value = profile.phone_number;
+            document.getElementById('profile-email').value = profile.gmail;
+        }
 
-            data.forEach(client => {
-                const clientDiv = document.createElement('div');
-                clientDiv.className = 'room';
-                clientDiv.innerHTML = `
-                    <h2>${client.name}</h2>
-                    <p>Bills: ₱${client.bills}</p>
+        async function updateProfile() {
+            const name = document.getElementById('profile-name').value;
+            const phone_number = document.getElementById('profile-phone').value;
+            const gmail = document.getElementById('profile-email').value;
+
+            const { data, error } = await connect.from('clients').update({ name, phone_number, gmail }).eq('role', 'tenant');
+            if (error) {
+                console.error('Error updating profile:', error);
+                return;
+            }
+
+            fetchProfile();
+        }
+
+
+        async function fetchPaymentHistory() {
+            const { data, error } = await connect.from('payment_history').select().eq('tenant_id', 1); // Assuming tenant_id is 1
+            if (error) {
+                console.error('Error fetching payment history:', error);
+                return;
+            }
+
+            const paymentHistoryList = document.getElementById('payment-history-list');
+            paymentHistoryList.innerHTML = '';
+
+            data.forEach(payment => {
+                const paymentDiv = document.createElement('div');
+                paymentDiv.className = 'payment-history';
+                paymentDiv.innerHTML = `
+                    <h2>Payment</h2>
+                    <p>Date: ${payment.date}</p>
+                    <p>Amount: ₱${payment.amount}</p>
+                    <p>Payment Method: ${payment.method}</p>
                 `;
-                clientsList.appendChild(clientDiv);
+                paymentHistoryList.appendChild(paymentDiv);
             });
         }
 
-        async function logout() {
-            const { error } = await connect.auth.signOut();
+        async function fetchMaintenanceRequests() {
+            const { data, error } = await connect.from('maintenance_requests').select().eq('tenant_id', 1); // Assuming tenant_id is 1
             if (error) {
-                console.error('Error during logout:', error);
+                console.error('Error fetching maintenance requests:', error);
                 return;
             }
-            window.location.href = 'login.html'; 
+
+            const maintenanceRequestsList = document.getElementById('maintenance-requests-list');
+            maintenanceRequestsList.innerHTML = '';
+
+            data.forEach(request => {
+                const requestDiv = document.createElement('div');
+                requestDiv.className = 'maintenance-request';
+                requestDiv.innerHTML = `
+                    <h2>Maintenance Request</h2>
+                    <p>Description: ${request.description}</p>
+                    <p>Status: ${request.status}</p>
+                    <p>Date Submitted: ${request.date_submitted}</p>
+                `;
+                maintenanceRequestsList.appendChild(requestDiv);
+            });
         }
+
+        async function submitMaintenanceRequest() {
+            const description = document.getElementById('maintenance-description').value;
+
+            const { data, error } = await connect.from('maintenance_requests').insert([
+                { tenant_id: 1, description, status: 'Pending', date_submitted: new Date().toISOString() }
+            ]);
+
+            if (error) {
+                console.error('Error submitting maintenance request:', error);
+                return;
+            }
+
+            document.getElementById('maintenance-description').value = '';
+            fetchMaintenanceRequests();
+        }
+
+        async function fetchRooms() {
+            const { data, error } = await connect.from('room_details').select();
+            if (error) {
+                console.error('Error fetching rooms:', error);
+                return;
+            }
+
+            const roomsList = document.getElementById('rooms-list');
+            roomsList.innerHTML = '';
+
+            data.forEach(room => {
+                const roomDiv = document.createElement('div');
+                roomDiv.className = 'room';
+                roomDiv.innerHTML = `
+                    <h2>Room Number: ${room.room_num}</h2>
+                    <p>Price: ₱${room.room_price}</p>
+                    <p>Room Size: ${room.room_size}</p>
+                    <button onclick="bookRoom(${room.room_num})">Book</button>
+                `;
+                roomsList.appendChild(roomDiv);
+            });
+        }
+
+        async function bookRoom(room_num) {
+            const { data, error } = await connect.from('booking_requests').insert([
+                { tenant_id: 1, room_num, status: 'Pending', date_requested: new Date().toISOString() }
+            ]);
+
+            if (error) {
+                console.error('Error booking room:', error);
+                return;
+            }
+
+            alert('Room booking request submitted successfully!');
+        }
+
+        async function submitFeedback() {
+            const feedback_text = document.getElementById('feedback-text').value;
+
+            const { data, error } = await connect.from('feedback').insert([
+                { tenant_id: 1, feedback_text, date_submitted: new Date().toISOString() }
+            ]);
+
+            if (error) {
+                console.error('Error submitting feedback:', error);
+                return;
+            }
+
+            document.getElementById('feedback-text').value = '';
+            alert('Feedback submitted successfully!');
+        }
+
+        function logout() {
+    const { auth } = createClient(supabaseUrl, supabaseKey);
+
+    auth.signOut().then(response => {
+        if (response.error) {
+            console.error('Error during logout:', response.error.message);
+            return;
+        }
+        // Redirect or perform any other action after logout
+        window.location.href = 'login.html';
+    }).catch(error => {
+        console.error('Error during logout:', error.message);
+    });
+}
     </script>
 </body>
 </html>
