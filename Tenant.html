@@ -255,6 +255,53 @@
         console.error('Error during logout:', error.message);
     });
 }
+
+
+async function fetchRooms() {
+    const { data, error } = await connect.from('room_details').select();
+    if (error) {
+        console.error('Error fetching rooms:', error);
+        return;
+    }
+
+    const roomsList = document.getElementById('rooms-list');
+    roomsList.innerHTML = '';
+
+    data.forEach(room => {
+        const roomDiv = document.createElement('div');
+        roomDiv.className = 'room';
+        roomDiv.innerHTML = `
+            <h2>Room Number: ${room.room_num}</h2>
+            <p>Price: ₱${room.room_price}</p>
+            <p>Room Size: ${room.room_size}</p>
+            <button onclick="bookRoom(${room.room_num})">Book</button>
+        `;
+        roomsList.appendChild(roomDiv);
+    });
+}
+document.addEventListener('DOMContentLoaded', function() {
+    showSection('home');
+    fetchProfile();
+    fetchLeaseAgreements();
+    fetchPaymentHistory();
+    fetchMaintenanceRequests();
+    fetchRooms();  // Call this to load room details initially
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     </script>
 </body>
 </html>
