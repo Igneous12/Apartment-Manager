@@ -20,7 +20,7 @@
             <li><a onclick="showSection('maintenance')">Maintenance Requests</a></li>
             <li><a onclick="showSection('community')">Community</a></li>
             <li><a onclick="showSection('feedback')">Feedback</a></li>
-            <li><a onclick="showSection('roomdetails')">Room Details</a></li>
+            <li><a onclick="showSection('contact')">Room Details</a></li>
             <li><a onclick="showSection('booking')">Book a Room</a></li>
             <li><a onclick="logout()">Logout</a></li>
         </ul>
@@ -68,6 +68,14 @@
             <button onclick="submitFeedback()">Submit Feedback</button>
         </div>
     </div>
+    <div class="container contact" id="contact">
+        <div class="form-container">
+            <h2>Room Listings</h2>
+        </div>
+        <div id="rooms-list">
+            <!-- Rooms will be listed here -->
+        </div>
+    </div>
     <div class="container booking" id="booking">
         <h2>Book a Room</h2>
         <div id="rooms-list">
@@ -79,25 +87,26 @@
     </footer>
 
     <script>
-        const { createClient } = supabase;
-        const supabaseUrl = 'https://oqeboxqhdunykevlsngo.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xZWJveHFoZHVueWtldmxzbmdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTcxMjM1ODYsImV4cCI6MjAzMjY5OTU4Nn0.l59O6fS7QE9ldJziNYYzSNMeNmW6fnqDcJ2wImvaoIk';
-        const connect = createClient(supabaseUrl, supabaseKey);
+    const { createClient } = supabase;
+    const supabaseUrl = 'https://oqeboxqhdunykevlsngo.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xZWJveHFoZHVueWtldmxzbmdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTcxMjM1ODYsImV4cCI6MjAzMjY5OTU4Nn0.l59O6fS7QE9ldJziNYYzSNMeNmW6fnqDcJ2wImvaoIk';
+    const connect = createClient(supabaseUrl, supabaseKey);
 
-        function showSection(sectionId) {
-            const sections = document.querySelectorAll('.container');
-            sections.forEach(section => section.style.display = 'none');
-            document.getElementById(sectionId).style.display = 'block';
-        }
+    function showSection(sectionId) {
+        const sections = document.querySelectorAll('.container');
+        sections.forEach(section => section.style.display = 'none');
+        document.getElementById(sectionId).style.display = 'block';
+    }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            showSection('home');
-            fetchProfile();
-            fetchLeaseAgreements();
-            fetchPaymentHistory();
-            fetchMaintenanceRequests();
-            fetchRooms();
-        });
+    document.addEventListener('DOMContentLoaded', function() {
+        showSection('home');
+        fetchProfile();
+        
+        fetchPaymentHistory();
+        fetchMaintenanceRequests();
+        fetchRooms(); // Include the function call here
+    });
+
 
         async function fetchProfile() {
             const { data, error } = await connect.from('clients').select().eq('role', 'tenant');
@@ -188,29 +197,47 @@
             document.getElementById('maintenance-description').value = '';
             fetchMaintenanceRequests();
         }
-
-        async function fetchRooms() {
-            const { data, error } = await connect.from('room_details').select();
+        async function addRoom() {
+            const room_num = parseInt(document.getElementById('room-num').value);
+            const room_price = parseInt(document.getElementById('room-price').value);
+            const room_size = document.getElementById('room-size').value;
+    
+            const { data, error } = await connect.from('room_details').insert([
+                { room_num: room_num, room_price: room_price, room_size: room_size, status: 'available' }
+            ]);
+    
             if (error) {
-                console.error('Error fetching rooms:', error);
+                console.error('Error adding room:', error);
                 return;
             }
-
-            const roomsList = document.getElementById('rooms-list');
-            roomsList.innerHTML = '';
-
-            data.forEach(room => {
-                const roomDiv = document.createElement('div');
-                roomDiv.className = 'room';
-                roomDiv.innerHTML = `
-                    <h2>Room Number: ${room.room_num}</h2>
-                    <p>Price: ₱${room.room_price}</p>
-                    <p>Room Size: ${room.room_size}</p>
-                    <button onclick="bookRoom(${room.room_num})">Book</button>
-                `;
-                roomsList.appendChild(roomDiv);
-            });
+    
+            fetchRooms();
         }
+
+          // Include the function definition here
+          async function fetchRooms() {
+    const { data, error } = await connect.from('room_details').select();
+    if (error) {
+        console.error('Error fetching rooms:', error);
+        return;
+    }
+
+    const roomsList = document.getElementById('rooms-list');
+    roomsList.innerHTML = '';
+
+    data.forEach(room_details => {
+        const roomDiv = document.createElement('div');
+        roomDiv.className = 'room';
+        roomDiv.innerHTML = `
+            <h2>Room Number: ${room_details.room_num}</h2>
+            <p>Price: ₱${room_details.room_price}</p>
+            <p>Room Size: ${room_details.room_size}</p>
+            <p>Status: ${room_details.status}</p>
+        `;
+        roomsList.appendChild(roomDiv);
+    });
+}
+
 
         async function bookRoom(room_num) {
             const { data, error } = await connect.from('booking_requests').insert([
