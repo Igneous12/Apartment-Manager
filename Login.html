@@ -51,7 +51,7 @@
             <li><a onclick="logout()">Logout</a></li>
         </ul>
     </nav>
-    <div class="container home" id="home">
+    <div class="container home" id="home"></div>
 
     <footer>
         <p>&copy; 2024 Apartment Manager. All rights reserved.</p>
@@ -78,7 +78,14 @@
             const password = document.getElementById('client-password').value;
             const role = document.getElementById('client-role').value;
 
-            const { data, error } = await connect.from('clients').insert({
+            console.log('Role selected:', role); // Debugging line to check the selected role
+
+            if (!role) {
+                alert('Please select a role');
+                return;
+            }
+
+            const { data, error } = await connect.from('users').insert({
                 name: name,
                 age: age,
                 phone_number: phone,
@@ -86,12 +93,25 @@
                 date_started: date,
                 password: password,
                 role: role
-            });
+            }, { returning: 'minimal' });
 
             if (error) {
-                console.error('Error adding client:', error);
+                console.error('Error adding user:', error);
                 return;
             }
+
+            alert('Successfully registered');
+            resetRegisterForm();
+        }
+
+        function resetRegisterForm() {
+            document.getElementById('client-email').value = '';
+            document.getElementById('client-password').value = '';
+            document.getElementById('client-name').value = '';
+            document.getElementById('client-age').value = '';
+            document.getElementById('client-phone').value = '';
+            document.getElementById('client-date').value = '';
+            document.getElementById('client-role').value = '';
         }
 
         function login() {
@@ -99,7 +119,7 @@
             const password = document.getElementById('login-password').value;
 
             if (email === 'hoss@gmail.com' && password === 'hoss') {
-                window.location.href = 'Webdev.html';
+                window.location.href = 'Landlord.html';
                 document.getElementById('login-container').style.display = 'none';
                 showSection('home');
                 fetchClients(); // Assuming a function to fetch client data
@@ -112,29 +132,29 @@
             }
         }
 
-    async function resetPassword() {
-    const email = prompt('Enter the email of the client whose password you want to update:');
-    if (!email) return; 
-    
-    const newPassword = prompt('Enter the new password:');
-    if (!newPassword) return; 
-    
-    try {
-        const { error: updateError } = await connect
-            .from('clients')
-            .update({ password: newPassword })
-            .eq('gmail', email); 
-    
-        if (updateError) {
-            throw updateError;
+        async function resetPassword() {
+            const email = prompt('Enter the email of the user whose password you want to update:');
+            if (!email) return;
+
+            const newPassword = prompt('Enter the new password:');
+            if (!newPassword) return;
+
+            try {
+                const { error: updateError } = await connect
+                    .from('users')
+                    .update({ password: newPassword })
+                    .eq('gmail', email);
+
+                if (updateError) {
+                    throw updateError;
+                }
+
+                alert('Password updated successfully');
+                fetchClients();
+            } catch (error) {
+                console.error('Error updating password:', error.message);
+            }
         }
-    
-        alert('Password updated successfully');
-        fetchClients(); 
-    } catch (error) {
-        console.error('Error updating password:', error.message);
-    }
-}
 
         function logout() {
             document.getElementById('login-container').style.display = 'flex';
