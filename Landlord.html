@@ -103,7 +103,7 @@
                     <h2>${client.name}</h2>
                     <p>Age: ${client.age}</p>
                     <p>Phone number: 0${client.phone_number}</p>
-                    <p>Email: ${client.gmail}</p>
+                    <p>Email: ${client.email}</p>
                     <p>Date started: ${client.date_started}</p>
                     <p>Bills: ₱${client.bills}</p>
                 `;
@@ -120,7 +120,7 @@
         }
     
         async function editClient(name) {
-            const field = prompt("Enter the field you want to update (name, age, phone_number, gmail, date_started, bills):");
+            const field = prompt("Enter the field you want to update (name, age, phone_number, email, date_started, bills):");
             const newValue = prompt('Enter the new value for ${field}:');
     
             const updatedField = {};

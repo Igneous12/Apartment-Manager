@@ -89,7 +89,7 @@
                 name: name,
                 age: age,
                 phone_number: phone,
-                gmail: email,
+                email: email,
                 date_started: date,
                 password: password,
                 role: role
@@ -114,21 +114,35 @@
             document.getElementById('client-role').value = '';
         }
 
-        function login() {
+        async function login() {
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
 
-            if (email === 'hoss@gmail.com' && password === 'hoss') {
-                window.location.href = 'Landlord.html';
+            try {
+                const { data: user, error } = await connect
+                    .from('users')
+                    .select('*')
+                    .eq('email', email)
+                    .eq('password', password)
+                    .single();
+
+                if (error || !user) {
+                    alert('Invalid username or password');
+                    console.error('Login error:', error);
+                    return;
+                }
+
+                if (user.role === 'landlord') {
+                    window.location.href = 'Landlord.html';
+                } else if (user.role === 'tenant') {
+                    window.location.href = 'Tenant.html';
+                }
+
                 document.getElementById('login-container').style.display = 'none';
                 showSection('home');
-                fetchClients(); // Assuming a function to fetch client data
-            } else if (email === 'ssoh@gmail.com' && password === 'ssoh') {
-                window.location.href = 'Tenant.html';
-                document.getElementById('login-container').style.display = 'none';
-                showSection('home');
-            } else {
-                alert('Invalid username or password');
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('An error occurred during login');
             }
         }
 
@@ -143,7 +157,7 @@
                 const { error: updateError } = await connect
                     .from('users')
                     .update({ password: newPassword })
-                    .eq('gmail', email);
+                    .eq('email', email);
 
                 if (updateError) {
                     throw updateError;
