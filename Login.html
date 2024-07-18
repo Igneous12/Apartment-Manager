@@ -78,6 +78,8 @@
             const password = document.getElementById('client-password').value;
             const role = document.getElementById('client-role').value;
 
+            console.log('Role selected:', role); // Debugging line to check the selected role
+
             if (!role) {
                 alert('Please select a role');
                 return;
@@ -116,37 +118,31 @@
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
 
-            // Sign in the user
-            const { data: authData, error: authError } = await connect.auth.signInWithPassword({
-                email: email,
-                password: password
-            });
+            try {
+                const { data: user, error } = await connect
+                    .from('users')
+                    .select('*')
+                    .eq('email', email)
+                    .eq('password', password)
+                    .single();
 
-            if (authError) {
-                alert('Invalid email or password');
-                return;
-            }
+                if (error || !user) {
+                    alert('Invalid username or password');
+                    console.error('Login error:', error);
+                    return;
+                }
 
-            // Fetch the user's role
-            const { data: userData, error: userError } = await connect
-                .from('users')
-                .select('role')
-                .eq('email', email)
-                .single();
+                if (user.role === 'landlord') {
+                    window.location.href = 'Landlord.html';
+                } else if (user.role === 'tenant') {
+                    window.location.href = 'Tenant.html';
+                }
 
-            if (userError) {
-                console.error('Error fetching user role:', userError);
-                return;
-            }
-
-            const role = userData.role;
-
-            if (role === 'landlord') {
-                window.location.href = 'Landlord.html';
-            } else if (role === 'tenant') {
-                window.location.href = 'Tenant.html';
-            } else {
-                alert('Unknown user role');
+                document.getElementById('login-container').style.display = 'none';
+                showSection('home');
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('An error occurred during login');
             }
         }
 
