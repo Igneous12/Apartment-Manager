@@ -94,211 +94,166 @@
     document.addEventListener('DOMContentLoaded', function() {
         showSection('home');
         fetchProfile();
-        
         fetchPaymentHistory();
         fetchMaintenanceRequests();
-        fetchRooms(); // Include the function call here
+        fetchRooms();
     });
 
-
-        async function fetchProfile() {
-            const { data, error } = await connect.from('clients').select().eq('role', 'tenant');
-            if (error) {
-                console.error('Error fetching profile:', error);
-                return;
-            }
-
-            const profile = data[0];
-            document.getElementById('profile-name').value = profile.name;
-            document.getElementById('profile-phone').value = profile.phone_number;
-            document.getElementById('profile-email').value = profile.gmail;
-        }
-
-        async function updateProfile() {
-            const name = document.getElementById('profile-name').value;
-            const phone_number = document.getElementById('profile-phone').value;
-            const gmail = document.getElementById('profile-email').value;
-
-            const { data, error } = await connect.from('clients').update({ name, phone_number, gmail }).eq('role', 'tenant');
-            if (error) {
-                console.error('Error updating profile:', error);
-                return;
-            }
-
-            fetchProfile();
-        }
-
-
-        async function fetchPaymentHistory() {
-            const { data, error } = await connect.from('payment_history').select().eq('tenant_id', 1); // Assuming tenant_id is 1
-            if (error) {
-                console.error('Error fetching payment history:', error);
-                return;
-            }
-
-            const paymentHistoryList = document.getElementById('payment-history-list');
-            paymentHistoryList.innerHTML = '';
-
-            data.forEach(payment => {
-                const paymentDiv = document.createElement('div');
-                paymentDiv.className = 'payment-history';
-                paymentDiv.innerHTML = `
-                    <h2>Payment</h2>
-                    <p>Date: ${payment.date}</p>
-                    <p>Amount: ₱${payment.amount}</p>
-                    <p>Payment Method: ${payment.method}</p>
-                `;
-                paymentHistoryList.appendChild(paymentDiv);
-            });
-        }
-
-        async function fetchMaintenanceRequests() {
-            const { data, error } = await connect.from('maintenance_requests').select().eq('tenant_id', 1); // Assuming tenant_id is 1
-            if (error) {
-                console.error('Error fetching maintenance requests:', error);
-                return;
-            }
-
-            const maintenanceRequestsList = document.getElementById('maintenance-requests-list');
-            maintenanceRequestsList.innerHTML = '';
-
-            data.forEach(request => {
-                const requestDiv = document.createElement('div');
-                requestDiv.className = 'maintenance-request';
-                requestDiv.innerHTML = `
-                    <h2>Maintenance Request</h2>
-                    <p>Description: ${request.description}</p>
-                    <p>Status: ${request.status}</p>
-                    <p>Date Submitted: ${request.date_submitted}</p>
-                `;
-                maintenanceRequestsList.appendChild(requestDiv);
-            });
-        }
-
-        async function submitMaintenanceRequest() {
-            const description = document.getElementById('maintenance-description').value;
-
-            const { data, error } = await connect.from('maintenance_requests').insert([
-                { tenant_id: 1, description, status: 'Pending', date_submitted: new Date().toISOString() }
-            ]);
-
-            if (error) {
-                console.error('Error submitting maintenance request:', error);
-                return;
-            }
-
-            document.getElementById('maintenance-description').value = '';
-            fetchMaintenanceRequests();
-        }
-        async function addRoom() {
-            const room_num = parseInt(document.getElementById('room-num').value);
-            const room_price = parseInt(document.getElementById('room-price').value);
-            const room_size = document.getElementById('room-size').value;
-    
-            const { data, error } = await connect.from('room_details').insert([
-                { room_num: room_num, room_price: room_price, room_size: room_size, status: 'available' }
-            ]);
-    
-            if (error) {
-                console.error('Error adding room:', error);
-                return;
-            }
-    
-            fetchRooms();
-        }
-
-          // Include the function definition here
-          async function fetchRooms() {
-    const { data, error } = await connect.from('room_details').select();
-    if (error) {
-        console.error('Error fetching rooms:', error);
-        return;
-    }
-
-    const roomsList = document.getElementById('rooms-list');
-    roomsList.innerHTML = '';
-
-    data.forEach(room_details => {
-        const roomDiv = document.createElement('div');
-        roomDiv.className = 'room';
-        roomDiv.innerHTML = `
-            <h2>Room Number: ${room_details.room_num}</h2>
-            <p>Price: ₱${room_details.room_price}</p>
-            <p>Room Size: ${room_details.room_size}</p>
-            <p>Status: ${room_details.status}</p>
-        `;
-        roomsList.appendChild(roomDiv);
-    });
-}
-
-
-        async function bookRoom(room_num) {
-            const { data, error } = await connect.from('booking_requests').insert([
-                { tenant_id: 1, room_num, status: 'Pending', date_requested: new Date().toISOString() }
-            ]);
-
-            if (error) {
-                console.error('Error booking room:', error);
-                return;
-            }
-
-            alert('Room booking request submitted successfully!');
-        }
-
-        async function submitFeedback() {
-            const feedback_text = document.getElementById('feedback-text').value;
-
-            const { data, error } = await connect.from('feedback').insert([
-                { tenant_id: 1, feedback_text, date_submitted: new Date().toISOString() }
-            ]);
-
-            if (error) {
-                console.error('Error submitting feedback:', error);
-                return;
-            }
-
-            document.getElementById('feedback-text').value = '';
-            alert('Feedback submitted successfully!');
-        }
-
-        function logout() {
-    const { auth } = createClient(supabaseUrl, supabaseKey);
-
-    auth.signOut().then(response => {
-        if (response.error) {
-            console.error('Error during logout:', response.error.message);
+    async function fetchProfile() {
+        const { data, error } = await connect.from('users').select().eq('role', 'tenant');
+        if (error) {
+            console.error('Error fetching profile:', error);
             return;
         }
-        // Redirect or perform any other action after logout
-        window.location.href = 'login.html';
-    }).catch(error => {
-        console.error('Error during logout:', error.message);
-    });
-}
 
-
-async function fetchRooms() {
-    const { data, error } = await connect.from('room_details').select();
-    if (error) {
-        console.error('Error fetching rooms:', error);
-        return;
+        const profile = data[0];
+        document.getElementById('profile-name').value = profile.name;
+        document.getElementById('profile-phone').value = profile.phone_number;
+        document.getElementById('profile-email').value = profile.gmail;
     }
 
-    const roomsList = document.getElementById('rooms-list');
-    roomsList.innerHTML = '';
+    async function updateProfile() {
+        const name = document.getElementById('profile-name').value;
+        const phone_number = document.getElementById('profile-phone').value;
+        const gmail = document.getElementById('profile-email').value;
 
-    data.forEach(room => {
-        const roomDiv = document.createElement('div');
-        roomDiv.className = 'room';
-        roomDiv.innerHTML = `
-            <h2>Room Number: ${room.room_num}</h2>
-            <p>Price: ₱${room.room_price}</p>
-            <p>Room Size: ${room.room_size}</p>
-            <button onclick="bookRoom(${room.room_num})">Book</button>
-        `;
-        roomsList.appendChild(roomDiv);
-    });
-}
+        const { data, error } = await connect.from('users').update({ name, phone_number, gmail }).eq('role', 'tenant');
+        if (error) {
+            console.error('Error updating profile:', error);
+            return;
+        }
+
+        fetchProfile();
+    }
+
+    async function fetchPaymentHistory() {
+        const { data, error } = await connect.from('payment_history').select().eq('tenant_id', 1); // Assuming tenant_id is 1
+        if (error) {
+            console.error('Error fetching payment history:', error);
+            return;
+        }
+
+        const paymentHistoryList = document.getElementById('payment-history-list');
+        paymentHistoryList.innerHTML = '';
+
+        data.forEach(payment => {
+            const paymentDiv = document.createElement('div');
+            paymentDiv.className = 'payment-history';
+            paymentDiv.innerHTML = `
+                <h2>Payment</h2>
+                <p>Date: ${payment.date}</p>
+                <p>Amount: ₱${payment.amount}</p>
+                <p>Payment Method: ${payment.method}</p>
+            `;
+            paymentHistoryList.appendChild(paymentDiv);
+        });
+    }
+
+    async function fetchMaintenanceRequests() {
+        const { data, error } = await connect.from('maintenance_requests').select().eq('tenant_id', 1); // Assuming tenant_id is 1
+        if (error) {
+            console.error('Error fetching maintenance requests:', error);
+            return;
+        }
+
+        const maintenanceRequestsList = document.getElementById('maintenance-requests-list');
+        maintenanceRequestsList.innerHTML = '';
+
+        data.forEach(request => {
+            const requestDiv = document.createElement('div');
+            requestDiv.className = 'maintenance-request';
+            requestDiv.innerHTML = `
+                <h2>Maintenance Request</h2>
+                <p>Description: ${request.description}</p>
+                <p>Status: ${request.status}</p>
+                <p>Date Submitted: ${request.date_submitted}</p>
+            `;
+            maintenanceRequestsList.appendChild(requestDiv);
+        });
+    }
+
+    async function submitMaintenanceRequest() {
+        const description = document.getElementById('maintenance-description').value;
+
+        const { data, error } = await connect.from('maintenance_requests').insert([
+            { tenant_id: 1, description, status: 'Pending', date_submitted: new Date().toISOString() }
+        ]);
+
+        if (error) {
+            console.error('Error submitting maintenance request:', error);
+            return;
+        }
+
+        document.getElementById('maintenance-description').value = '';
+        fetchMaintenanceRequests();
+    }
+
+    async function fetchRooms() {
+        const { data, error } = await connect.from('room_details').select();
+        if (error) {
+            console.error('Error fetching rooms:', error);
+            return;
+        }
+
+        const roomsList = document.getElementById('rooms-list');
+        roomsList.innerHTML = '';
+
+        data.forEach(room => {
+            const roomDiv = document.createElement('div');
+            roomDiv.className = 'room';
+            roomDiv.innerHTML = `
+                <h2>Room Number: ${room.room_num}</h2>
+                <p>Price: ₱${room.room_price}</p>
+                <p>Room Size: ${room.room_size}</p>
+                <button onclick="bookRoom(${room.room_num})">Book</button>
+            `;
+            roomsList.appendChild(roomDiv);
+        });
+    }
+
+    async function bookRoom(room_num) {
+        const { data, error } = await connect.from('booking_requests').insert([
+            { tenant_id: 1, room_num, status: 'Pending', date_requested: new Date().toISOString() }
+        ]);
+
+        if (error) {
+            console.error('Error booking room:', error);
+            return;
+        }
+
+        alert('Room booking request submitted successfully!');
+    }
+
+    async function submitFeedback() {
+        const feedback_text = document.getElementById('feedback-text').value;
+
+        const { data, error } = await connect.from('feedback').insert([
+            { tenant_id: 1, feedback_text, date_submitted: new Date().toISOString() }
+        ]);
+
+        if (error) {
+            console.error('Error submitting feedback:', error);
+            return;
+        }
+
+        document.getElementById('feedback-text').value = '';
+        alert('Feedback submitted successfully!');
+    }
+
+    function logout() {
+        const { auth } = createClient(supabaseUrl, supabaseKey);
+
+        auth.signOut().then(response => {
+            if (response.error) {
+                console.error('Error during logout:', response.error.message);
+                return;
+            }
+            // Redirect or perform any other action after logout
+            window.location.href = 'login.html';
+        }).catch(error => {
+            console.error('Error during logout:', error.message);
+        });
+    }
     </script>
 </body>
 </html>

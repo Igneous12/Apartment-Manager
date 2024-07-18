@@ -78,8 +78,6 @@
             const password = document.getElementById('client-password').value;
             const role = document.getElementById('client-role').value;
 
-            console.log('Role selected:', role); // Debugging line to check the selected role
-
             if (!role) {
                 alert('Please select a role');
                 return;
@@ -89,7 +87,7 @@
                 name: name,
                 age: age,
                 phone_number: phone,
-                gmail: email,
+                email: email,
                 date_started: date,
                 password: password,
                 role: role
@@ -114,21 +112,41 @@
             document.getElementById('client-role').value = '';
         }
 
-        function login() {
+        async function login() {
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
 
-            if (email === 'hoss@gmail.com' && password === 'hoss') {
+            // Sign in the user
+            const { data: authData, error: authError } = await connect.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
+
+            if (authError) {
+                alert('Invalid email or password');
+                return;
+            }
+
+            // Fetch the user's role
+            const { data: userData, error: userError } = await connect
+                .from('users')
+                .select('role')
+                .eq('email', email)
+                .single();
+
+            if (userError) {
+                console.error('Error fetching user role:', userError);
+                return;
+            }
+
+            const role = userData.role;
+
+            if (role === 'landlord') {
                 window.location.href = 'Landlord.html';
-                document.getElementById('login-container').style.display = 'none';
-                showSection('home');
-                fetchClients(); // Assuming a function to fetch client data
-            } else if (email === 'ssoh@gmail.com' && password === 'ssoh') {
+            } else if (role === 'tenant') {
                 window.location.href = 'Tenant.html';
-                document.getElementById('login-container').style.display = 'none';
-                showSection('home');
             } else {
-                alert('Invalid username or password');
+                alert('Unknown user role');
             }
         }
 
@@ -143,7 +161,7 @@
                 const { error: updateError } = await connect
                     .from('users')
                     .update({ password: newPassword })
-                    .eq('gmail', email);
+                    .eq('email', email);
 
                 if (updateError) {
                     throw updateError;

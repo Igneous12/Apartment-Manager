@@ -87,7 +87,7 @@
         });
     
         async function fetchClients() {
-            const { data, error } = await connect.from('clients').select().eq('role', 'tenant');
+            const { data, error } = await connect.from('users').select().eq('role', 'tenant');
             if (error) {
                 console.error('Error fetching clients:', error);
                 return;
@@ -102,10 +102,9 @@
                 clientDiv.innerHTML = `
                     <h2>${client.name}</h2>
                     <p>Age: ${client.age}</p>
-                    <p>Phone number: 0${client.phone_number}</p>
+                    <p>Phone number: ${client.phone_number}</p>
                     <p>Email: ${client.gmail}</p>
                     <p>Date started: ${client.date_started}</p>
-                    <p>Bills: ₱${client.bills}</p>
                 `;
                 const editButton = document.createElement('button');
                 editButton.innerText = "Edit";
@@ -120,13 +119,13 @@
         }
     
         async function editClient(name) {
-            const field = prompt("Enter the field you want to update (name, age, phone_number, gmail, date_started, bills):");
-            const newValue = prompt('Enter the new value for ${field}:');
+            const field = prompt("Enter the field you want to update (name, age, phone_number, gmail, date_started):");
+            const newValue = prompt(`Enter the new value for ${field}:`);
     
             const updatedField = {};
             updatedField[field] = newValue;
     
-            const { data, error } = await connect.from('clients').update(updatedField).eq('name', name);
+            const { data, error } = await connect.from('users').update(updatedField).eq('name', name);
     
             if (error) {
                 console.error('Error updating client:', error);
@@ -137,7 +136,7 @@
         }
     
         async function deleteClient(name) {
-            const { data, error } = await connect.from('clients').delete().eq('name', name);
+            const { data, error } = await connect.from('users').delete().eq('name', name);
     
             if (error) {
                 console.error('Error deleting client:', error);
@@ -191,7 +190,7 @@
     
         async function editRoom(room_num) {
             const field = prompt("Enter the field you want to update (room_num, room_price, room_size, status):");
-            const newValue = prompt('Enter the new value for ${field}:');
+            const newValue = prompt(`Enter the new value for ${field}:`);
     
             const updatedField = {};
             updatedField[field] = newValue;
@@ -261,35 +260,19 @@
         }
     
         function logout() {
-    const { auth } = createClient(supabaseUrl, supabaseKey);
-
-    auth.signOut().then(response => {
-        if (response.error) {
-            console.error('Error during logout:', response.error.message);
-            return;
+            const { auth } = createClient(supabaseUrl, supabaseKey);
+    
+            auth.signOut().then(response => {
+                if (response.error) {
+                    console.error('Error during logout:', response.error.message);
+                    return;
+                }
+                // Redirect or perform any other action after logout
+                window.location.href = 'login.html';
+            }).catch(error => {
+                console.error('Error during logout:', error.message);
+            });
         }
-        // Redirect or perform any other action after logout
-        window.location.href = 'login.html';
-    }).catch(error => {
-        console.error('Error during logout:', error.message);
-    });
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     </script>
 </body>
 </html>
-
