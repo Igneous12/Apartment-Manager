@@ -103,7 +103,7 @@
                     <h2>${client.name}</h2>
                     <p>Age: ${client.age}</p>
                     <p>Phone number: ${client.phone_number}</p>
-                    <p>Email: ${client.gmail}</p>
+                    <p>Email: ${client.email}</p>
                     <p>Date started: ${client.date_started}</p>
                 `;
                 const editButton = document.createElement('button');
@@ -119,7 +119,7 @@
         }
     
         async function editClient(name) {
-            const field = prompt("Enter the field you want to update (name, age, phone_number, gmail, date_started):");
+            const field = prompt("Enter the field you want to update (name, age, phone_number, email, date_started):");
             const newValue = prompt(`Enter the new value for ${field}:`);
     
             const updatedField = {};
@@ -136,16 +136,22 @@
         }
     
         async function deleteClient(name) {
-            const { data, error } = await connect.from('users').delete().eq('name', name);
-    
-            if (error) {
-                console.error('Error deleting client:', error);
-                return;
-            }
-    
-            fetchClients();
+    const confirmation = confirm(`Are you sure you want to delete the tenant: ${name}?`);
+    if (confirmation) {
+        const { data, error } = await connect.from('users').delete().eq('name', name);
+
+        if (error) {
+            console.error('Error deleting client:', error);
+            alert('Tenant not deleted');
+            return;
         }
-    
+
+        alert('Successfully deleted tenant');
+        fetchClients();
+    } else {
+        alert('Tenant not deleted');
+    }
+  }
         async function addRoom() {
             const room_num = parseInt(document.getElementById('room-num').value);
             const room_price = parseInt(document.getElementById('room-price').value);
