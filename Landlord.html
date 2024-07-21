@@ -11,6 +11,8 @@
 <body>
     <header>
         <h1>Apartment Manager</h1>
+        <div >Landlord</div>
+        
     </header>
     <nav>
         <ul>
@@ -191,8 +193,9 @@
 }
 
 
-async function fetchRooms() {
-    const { data, error } = await connect.from('room_details').select().in('status', ['available', 'booked']);
+    
+        async function fetchRooms() {
+    const { data, error } = await connect.from('room_details').select().eq('status', 'available');
     if (error) {
         console.error('Error fetching rooms:', error);
         return;
@@ -218,20 +221,9 @@ async function fetchRooms() {
         deleteButton.innerText = "Delete";
         deleteButton.addEventListener('click', () => deleteRoom(room.room_num));
         roomDiv.appendChild(deleteButton);
-
-        // Add unbook button only for booked rooms
-        if (room.status === 'booked') {
-            const unbookButton = document.createElement('button');
-            unbookButton.innerText = "Unbook";
-            unbookButton.addEventListener('click', () => unbookRoom(room.room_num));
-            roomDiv.appendChild(unbookButton);
-        }
-
         roomsList.appendChild(roomDiv);
     });
 }
-
-
 
     
         async function editRoom(room_num) {
@@ -269,23 +261,8 @@ async function fetchRooms() {
             }
         }
 
-    async function unbookRoom(room_num) {
-    const confirmation = confirm(`Are you sure you want to unbook the room number: ${room_num}?`);
-    if (confirmation) {
-        const { data, error } = await connect.from('room_details').update({ status: 'available' }).eq('room_num', room_num);
-        if (error) {
-            console.error('Error unbooking room:', error);
-            return;
-        }
-
-        alert('Room successfully unbooked');
-        fetchRooms();
-    }
-}
-
-
-async function fetchBookingRequests() {
-    const { data, error } = await connect.from('room_details').select().eq('status', 'pending');
+    async function fetchBookingRequests() {
+    const { data, error } = await connect.from('room_details').select('room_num, room_price, room_size, status').eq('status', 'pending');
     if (error) {
         console.error('Error fetching booking requests:', error);
         return;
@@ -302,17 +279,19 @@ async function fetchBookingRequests() {
             <p>Price: ${request.room_price}</p>
             <p>Size: ${request.room_size}</p>
             <p>Status: ${request.status}</p>
-            <p>Email: ${request.booker}</p> <!-- Display the booker's email -->
             <button onclick="updateBookingStatus(${request.room_num}, 'accepted')">Accept</button>
             <button onclick="updateBookingStatus(${request.room_num}, 'denied')">Deny</button>
         `;
-        bookingRequestsList.appendChild(requestDiv);
+        const containerDiv = document.createElement('div');
+        containerDiv.className = 'booking-request-container';
+        containerDiv.appendChild(requestDiv);
+        bookingRequestsList.appendChild(containerDiv);
     });
 }
 
     
    
-async function updateBookingStatus(room_num, status) {
+    async function updateBookingStatus(room_num, status) {
     const confirmation = confirm(`Are you sure you want to ${status} the booking request for room number: ${room_num}?`);
     if (confirmation) {
         let updateStatus = status;
@@ -326,15 +305,40 @@ async function updateBookingStatus(room_num, status) {
         if (error) {
             console.error('Error updating booking status:', error);
             return;
+
+            const bookingRequestsList = document.getElementById('booking-requests-list');
+            bookingRequestsList.innerHTML = '';
+    
+            data.forEach(request => {
+                const requestDiv = document.createElement('div');
+                requestDiv.className = 'room';
+                requestDiv.innerHTML = `
+                    <h2>Room ${request.room_num}</h2>
+                    <p>Price: ${request.room_price}</p>
+                    <p>Size: ${request.room_size}</p>
+                    <p>Status: ${request.status}</p>
+                    <button onclick="updateBookingStatus(${request.room_num}, 'accepted')">Accept</button>
+                    <button onclick="updateBookingStatus(${request.room_num}, 'denied')">Deny</button>
+                `;
+                bookingRequestsList.appendChild(requestDiv);
+            });
+        }
+    
+        async function updateBookingStatus(room_num, status) {
+            const { data, error } = await connect.from('room_details').update({ status }).eq('room_num', room_num);
+            if (error) {
+                console.error('Error updating booking status:', error);
+                return;
+            }
+    
+            fetchBookingRequests();
         }
 
         fetchBookingRequests();
-        fetchRooms(); // Refresh the rooms list to show the updated status
     } else {
         alert(`Booking request not ${status}`);
     }
 }
-
 
 async function fetchFeedback() {
     const { data, error } = await connect.from('feedback').select();
