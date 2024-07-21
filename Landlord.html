@@ -302,6 +302,7 @@ async function fetchBookingRequests() {
             <p>Price: ${request.room_price}</p>
             <p>Size: ${request.room_size}</p>
             <p>Status: ${request.status}</p>
+            <p>Email: ${request.booker}</p> <!-- Display the booker's email -->
             <button onclick="updateBookingStatus(${request.room_num}, 'accepted')">Accept</button>
             <button onclick="updateBookingStatus(${request.room_num}, 'denied')">Deny</button>
         `;
