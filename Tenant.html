@@ -20,6 +20,7 @@
             <li><a onclick="showSection('profile')">Profile</a></li>
             <li><a onclick="showSection('payment')">Payment History</a></li>
             <li><a onclick="showSection('feedback')">Feedback</a></li>
+            <li><a onclick="showSection('myRooms')">My Rooms</a></li>
             <li><a onclick="showSection('contact')">Room Listings</a></li>
             <li><a onclick="logout()">Logout</a></li>
         </ul>
@@ -65,6 +66,12 @@
             <button onclick="submitFeedback()">Submit Feedback</button>
         </div>
     </div>
+    <div class="container myRooms" id="myRooms">
+      <h2>My Rooms</h2>
+      <div id="my-rooms-list">
+          <!-- Booked rooms will be listed here -->
+      </div>
+  </div>  
     <div class="container contact" id="contact">
         <div class="form-container">
             <h2>Room Listings</h2>
@@ -89,11 +96,12 @@
         document.getElementById(sectionId).style.display = 'block';
       }
 
-      document.addEventListener('DOMContentLoaded', async function() {
-        showSection('home');
-        fetchProfile();
-        fetchPaymentHistory();
-        fetchAvailableRooms();
+    document.addEventListener('DOMContentLoaded', async function() {
+    showSection('home');
+    fetchProfile();
+    fetchPaymentHistory();
+    fetchAvailableRooms();
+    fetchMyRooms(); // Add this line to fetch and display the booked rooms
 
         const { data, error } = await connect.auth.getSession();
             const div = document.querySelector('.display');
@@ -105,19 +113,20 @@
       });
 
       async function fetchProfile() {
-        const { data, error } = await connect.from('users').select().eq('role', 'tenant');
-        
-        if (error) {
-            console.error('Error fetching profile:', error);
-            return;
-        }
-
-        const profile = data[0];
-        document.getElementById('profile-name').value = '';
-        document.getElementById('profile-phone').value = '';
-        document.getElementById('profile-email').value = '';
-        document.getElementById('username').textContent = `TENANT ${profile.name.toUpperCase()}`;
+    const { data, error } = await connect.from('users').select().eq('role', 'tenant');
+    
+    if (error) {
+        console.error('Error fetching profile:', error);
+        return;
     }
+
+    const profile = data[0];
+    document.getElementById('profile-name').value = '';
+    document.getElementById('profile-age').value = '';
+    document.getElementById('profile-phone').value = '';
+    document.getElementById('username').textContent = `TENANT`;
+}
+
 
     async function updateProfile() {
         const confirmation = confirm('Are you sure you want to update your information?');
@@ -302,6 +311,82 @@
             alert('An unexpected error occurred. Please try again later.');
         }
     }
+
+    async function fetchMyRooms() {
+    try {
+        const { data: sessionData, error: sessionError } = await connect.auth.getSession();
+
+        if (sessionError) {
+            console.error('Error getting session:', sessionError);
+            return;
+        }
+
+        if (!sessionData || !sessionData.session) {
+            console.error('No session data available');
+            return;
+        }
+
+        const tenantEmail = sessionData.session.user.email;
+        console.log('Tenant Email:', tenantEmail); // Log tenant email
+        
+        if (!tenantEmail) {
+            console.error('No email found in session');
+            return;
+        }
+
+        const encodedEmail = encodeURIComponent(tenantEmail);
+
+        const { data: user, error: userError } = await connect
+            .from('users')
+            .select('id')
+            .eq('email', encodedEmail)
+            .single();
+
+        if (userError) {
+            console.error('Error fetching user ID:', userError);
+            return;
+        }
+
+        const tenantId = user.id;
+        console.log('Tenant ID:', tenantId); // Log tenant ID
+
+        const { data: rooms, error: roomsError } = await connect
+            .from('room_details')
+            .select()
+            .eq('booker', tenantEmail)
+            .eq('status', 'booked'); // Ensure we are checking for the correct status
+
+        if (roomsError) {
+            console.error('Error fetching booked rooms:', roomsError);
+            return;
+        }
+
+        console.log('Fetched Rooms:', rooms); // Log fetched rooms
+
+        const myRoomsList = document.getElementById('my-rooms-list');
+        myRoomsList.innerHTML = '';
+
+        if (rooms.length === 0) {
+            myRoomsList.innerHTML = '<p>No rooms booked.</p>';
+        } else {
+            rooms.forEach(room => {
+                const roomDiv = document.createElement('div');
+                roomDiv.className = 'room';
+                roomDiv.innerHTML = `
+                    <h2>Room Number: ${room.room_num}</h2>
+                    <p>Price: ₱${room.room_price}</p>
+                    <p>Room Size: ${room.room_size}</p>
+                    <p>Status: ${room.status}</p>
+                `;
+                myRoomsList.appendChild(roomDiv);
+            });
+        }
+    } catch (error) {
+        console.error('Error fetching my rooms:', error);
+    }
+}
+
+
 
     async function submitFeedback() {
         const feedback_text = document.getElementById('feedback-text').value;

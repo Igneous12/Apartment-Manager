@@ -102,8 +102,9 @@
         }
 
         async function addClient() {
-            const password = document.getElementById('client-password').value;
-            const confirmPassword = document.getElementById('confirm-password').value;
+            const email = document.getElementById('client-email').value.trim();
+            const password = document.getElementById('client-password').value.trim();
+            const confirmPassword = document.getElementById('confirm-password').value.trim();
 
             if (password !== confirmPassword) {
                 alert('Passwords do not match');
@@ -112,11 +113,15 @@
                 return;
             }
 
-            const name = document.getElementById('client-name').value;
-            const age = parseInt(document.getElementById('client-age').value);
-            const phone = document.getElementById('client-phone').value;
-            const email = document.getElementById('client-email').value;
-            const date = document.getElementById('client-date').value;
+            if (!email || !password) {
+                alert('Email and password are required');
+                return;
+            }
+
+            const name = document.getElementById('client-name').value.trim();
+            const age = parseInt(document.getElementById('client-age').value.trim());
+            const phone = document.getElementById('client-phone').value.trim();
+            const date = document.getElementById('client-date').value.trim();
             const role = document.getElementById('client-role').value;
 
             if (!role) {
@@ -131,38 +136,46 @@
             }
 
             console.log('Registering user with ID:', userId);
-            const { data: Signup, error:ErrorSignup } = await supabase.auth.signUp({
-                email: email,
-                password: password,
-            });
+            try {
+                const { data: Signup, error: ErrorSignup } = await connect.auth.signUp({
+                    email: email,
+                    password: password,
+                });
 
-            if(ErrorSignup){
-                console.log(ErrorSignup)
-            }else{
-                try {
-                    const { error } = await connect.from('users').insert({
-                        user_id: userId,
-                        name: name,
-                        age: age,
-                        phone_number: phone,
-                        email: email,
-                        date_started: date,
-                        password: password,
-                        role: role
-                    }, { returning: 'minimal' });
+                if (ErrorSignup) {
+                    console.log(ErrorSignup);
+                    alert(`Error signing up: ${ErrorSignup.message}`);
+                    return;
+                } else {
+                    try {
+                        const { error } = await connect.from('users').insert({
+                            user_id: userId,
+                            name: name,
+                            age: age,
+                            phone_number: phone,
+                            email: email,
+                            date_started: date,
+                            password: password,
+                            role: role
+                        }, { returning: 'minimal' });
 
-                    if (error) {
-                        throw error;
+                        if (error) {
+                            throw error;
+                        }
+
+                        alert('Successfully registered');
+                        resetRegisterForm();
+                    } catch (error) {
+                        console.error('Error adding user:', error);
+                        alert('Error adding user: ' + error.message);
                     }
-
-                    alert('Successfully registered');
-                    resetRegisterForm();
-                } catch (error) {
-                    console.error('Error adding user:', error);
-                    alert('Error adding user: ' + error.message);
                 }
+            } catch (error) {
+                console.error('Error signing up:', error);
+                alert('Error signing up: ' + error.message);
+            }
         }
-    }
+
         function resetRegisterForm() {
             document.getElementById('client-email').value = '';
             document.getElementById('client-password').value = '';
@@ -175,28 +188,34 @@
         }
 
         async function login() {
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+
+            if (!email || !password) {
+                alert('Email and password are required');
+                return;
+            }
 
             try {
-                const { data:AuthuSer, error:AuthError } = await connect.auth.signInWithPassword({
+                const { data: AuthUser, error: AuthError } = await connect.auth.signInWithPassword({
                     email: email,
                     password: password,
                 });
-                
-                if(AuthError){
-                    alert("Wrong Details")
+
+                if (AuthError) {
+                    alert('Invalid email or password');
                     return;
                 }
+
                 const { data: user, error } = await connect
-                .from('users')
-                .select('*')
-                .eq('email', email)
-                .eq('password', password)
-                .single();
-                
+                    .from('users')
+                    .select('*')
+                    .eq('email', email)
+                    .eq('password', password)
+                    .single();
+
                 if (error || !user) {
-                    alert('Invalid username or password');
+                    alert('Invalid email or password');
                     console.error('Login error:', error);
                     return;
                 }
@@ -212,7 +231,6 @@
             } catch (error) {
                 console.error('Login error:', error);
                 alert('An error occurred during login');
-                
             }
         }
 
@@ -244,7 +262,7 @@
             showSection('home');
             document.getElementById('login-email').focus();
             document.getElementById('login-password').value = '';
-        }               
+        }
 
         function toggleLoginRegister() {
             const loginBox = document.querySelector('.login-box');
@@ -263,16 +281,14 @@
             const confirmPasswordInput = document.getElementById('confirm-password');
             const showPassword = document.getElementById('show-password').checked;
             const showConfirmPassword = document.getElementById('show-confirm-password').checked;
-            
+
             passwordInput.type = showPassword ? 'text' : 'password';
             confirmPasswordInput.type = showConfirmPassword ? 'text' : 'password';
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
             const { data, error } = await connect.auth.getSession();
-            
-            
-          console.log(data)
+            console.log(data);
         });
     </script>
 </body>
