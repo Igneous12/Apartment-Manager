@@ -355,12 +355,24 @@ async function fetchFeedback() {
             <h3>Feedback</h3>
             <p>${feedback.feedback_text}</p>
             <p>Date Submitted: ${feedback.date_submitted}</p>
+            <button onclick="removeFeedback(${feedback.id})">Ok</button>
         `;
         const containerDiv = document.createElement('div');
         containerDiv.className = 'feedback-container';
         containerDiv.appendChild(feedbackDiv);
         feedbackList.appendChild(containerDiv);
     });
+}
+
+async function removeFeedback(feedbackId) {
+    const { data, error } = await connect.from('feedback').delete().eq('id', feedbackId);
+    if (error) {
+        console.error('Error removing feedback:', error);
+        return;
+    }
+
+    alert('Feedback removed successfully');
+    fetchFeedback();
 }
 
         function logout() {
