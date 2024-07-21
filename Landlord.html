@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Apartment Manager</title>
+    <title>Apartment Manager - Landlord</title>
     <link href="https://fonts.googleapis.com/css2?family=Lobster&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" type="text/css" href="css.css">
@@ -30,15 +30,6 @@
     </div>
     <div class="container listings" id="listings">
         <h2>Clients</h2>
-        <div class="form-container">
-            <h3>Add New Tenant</h3>
-            <input type="text" id="tenant-name" placeholder="Name">
-            <input type="number" id="tenant-age" placeholder="Age">
-            <input type="text" id="tenant-phone" placeholder="Phone Number">
-            <input type="email" id="tenant-email" placeholder="Email">
-            <input type="date" id="tenant-date-started" placeholder="Date Started">
-            <button onclick="addTenant()">Add Tenant</button>
-        </div>
         <div id="clients-list" class="clients-list">
             <!-- Clients will be listed here -->
         </div>
@@ -131,25 +122,6 @@
             });
         }
 
-        async function addTenant() {
-    const name = document.getElementById('tenant-name').value;
-    const age = parseInt(document.getElementById('tenant-age').value);
-    const phone_number = document.getElementById('tenant-phone').value;
-    const email = document.getElementById('tenant-email').value;
-    const date_started = document.getElementById('tenant-date-started').value;
-
-    const { data, error } = await connect.from('users').insert([
-        { name, age, phone_number, email, date_started, role: 'tenant' }
-    ]);
-
-    if (error) {
-        console.error('Error adding tenant:', error);
-        return;
-    }
-
-    fetchClients();
-}
-    
         async function editClient(name) {
             const field = prompt("Enter the field you want to update (name, age, phone_number, email, date_started):");
             const newValue = prompt(`Enter the new value for ${field}:`);
@@ -168,29 +140,30 @@
         }
     
         async function deleteClient(name) {
-    const confirmation = confirm(`Are you sure you want to delete the tenant: ${name}?`);
-    if (confirmation) {
-        const { data, error } = await connect.from('users').delete().eq('name', name);
-
-        if (error) {
-            console.error('Error deleting client:', error);
-            alert('Tenant not deleted');
-            return;
+            const confirmation = confirm(`Are you sure you want to delete the tenant: ${name}?`);
+            if (confirmation) {
+                const { data, error } = await connect.from('users').delete().eq('name', name);
+    
+                if (error) {
+                    console.error('Error deleting client:', error);
+                    alert('Tenant not deleted');
+                    return;
+                }
+    
+                alert('Successfully deleted tenant');
+                fetchClients();
+            } else {
+                alert('Tenant not deleted');
+            }
         }
-
-        alert('Successfully deleted tenant');
-        fetchClients();
-    } else {
-        alert('Tenant not deleted');
-    }
-  }
+    
         async function addRoom() {
             const room_num = parseInt(document.getElementById('room-num').value);
-            const room_price = parseInt(document.getElementById('room-price').value);
+            const room_price = parseFloat(document.getElementById('room-price').value);
             const room_size = document.getElementById('room-size').value;
     
             const { data, error } = await connect.from('room_details').insert([
-                { room_num: room_num, room_price: room_price, room_size: room_size, status: 'available' }
+                { room_num, room_price, room_size, status: 'available' }
             ]);
     
             if (error) {
@@ -211,80 +184,29 @@
             const roomsList = document.getElementById('rooms-list');
             roomsList.innerHTML = '';
     
-            data.forEach(room_details => {
+            data.forEach(room => {
                 const roomDiv = document.createElement('div');
                 roomDiv.className = 'room';
                 roomDiv.innerHTML = `
-                    <h2>Room Number: ${room_details.room_num}</h2>
-                    <p>Price: ₱${room_details.room_price}</p>
-                    <p>Room Size: ${room_details.room_size}</p>
-                    <p>Status: ${room_details.status}</p>
-                    <button onclick="editRoom(${room_details.room_num})">Edit</button>
-                    <button onclick="deleteRoom(${room_details.room_num})">Delete</button>
+                    <h2>Room ${room.room_num}</h2>
+                    <p>Price: ${room.room_price}</p>
+                    <p>Size: ${room.room_size}</p>
+                    <p>Status: ${room.status}</p>
                 `;
+                const editButton = document.createElement('button');
+                editButton.innerText = "Edit";
+                editButton.addEventListener('click', () => editRoom(room.room_num));
+                roomDiv.appendChild(editButton);
+                const deleteButton = document.createElement('button');
+                deleteButton.innerText = "Delete";
+                deleteButton.addEventListener('click', () => deleteRoom(room.room_num));
+                roomDiv.appendChild(deleteButton);
                 roomsList.appendChild(roomDiv);
             });
         }
     
-        async function fetchBookingRequests() {
-            const { data, error } = await connect.from('booking_requests').select();
-            if (error) {
-                console.error('Error fetching booking requests:', error);
-                return;
-            }
-    
-            const bookingRequestsList = document.getElementById('booking-requests-list');
-            bookingRequestsList.innerHTML = '';
-    
-            data.forEach(booking => {
-                const bookingDiv = document.createElement('div');
-                bookingDiv.className = 'booking';
-                bookingDiv.innerHTML = `
-                    <h2>Booking ID: ${booking.id}</h2>
-                    <p>Tenant: ${booking.tenant_name}</p>
-                    <p>Room Number: ${booking.room_num}</p>
-                    <p>Status: ${booking.status}</p>
-                    <button onclick="updateBookingStatus(${booking.id}, 'approved')">Approve</button>
-                    <button onclick="updateBookingStatus(${booking.id}, 'rejected')">Reject</button>
-                `;
-                bookingRequestsList.appendChild(bookingDiv);
-            });
-        }
-    
-        async function fetchFeedback() {
-            const { data, error } = await connect.from('feedback').select('feedback_text, date_submitted');
-            if (error) {
-                console.error('Error fetching feedback:', error);
-                return;
-            }
-    
-            const feedbackList = document.getElementById('feedback-list');
-            feedbackList.innerHTML = '';
-    
-            data.forEach(feedback => {
-                const feedbackDiv = document.createElement('div');
-                feedbackDiv.className = 'feedback';
-                feedbackDiv.innerHTML = `
-                    <p>${feedback.feedback_text}</p>
-                    <p>Date Submitted: ${new Date(feedback.date_submitted).toLocaleString()}</p>
-                `;
-                feedbackList.appendChild(feedbackDiv);
-            });
-        }
-    
-        async function updateBookingStatus(id, status) {
-            const { data, error } = await connect.from('booking_requests').update({ status }).eq('id', id);
-    
-            if (error) {
-                console.error('Error updating booking status:', error);
-                return;
-            }
-    
-            fetchBookingRequests();
-        }
-    
         async function editRoom(room_num) {
-            const field = prompt("Enter the field you want to update (room_price, room_size, status):");
+            const field = prompt("Enter the field you want to update (room_num, room_price, room_size, status):");
             const newValue = prompt(`Enter the new value for ${field}:`);
     
             const updatedField = {};
@@ -301,7 +223,7 @@
         }
     
         async function deleteRoom(room_num) {
-            const confirmation = confirm(`Are you sure you want to delete the room: ${room_num}?`);
+            const confirmation = confirm(`Are you sure you want to delete the room number: ${room_num}?`);
             if (confirmation) {
                 const { data, error } = await connect.from('room_details').delete().eq('room_num', room_num);
     
@@ -317,14 +239,78 @@
                 alert('Room not deleted');
             }
         }
+
+        async function fetchBookingRequests() {
+            const { data, error } = await connect.from('room_details').select('room_num, room_price, room_size, status').eq('status', 'pending');
+            if (error) {
+                console.error('Error fetching booking requests:', error);
+                return;
+            }
     
+            const bookingRequestsList = document.getElementById('booking-requests-list');
+            bookingRequestsList.innerHTML = '';
+    
+            data.forEach(request => {
+                const requestDiv = document.createElement('div');
+                requestDiv.className = 'request';
+                requestDiv.innerHTML = `
+                    <h2>Room ${request.room_num}</h2>
+                    <p>Price: ${request.room_price}</p>
+                    <p>Size: ${request.room_size}</p>
+                    <p>Status: ${request.status}</p>
+                    <button onclick="updateBookingStatus(${request.room_num}, 'accepted')">Accept</button>
+                    <button onclick="updateBookingStatus(${request.room_num}, 'denied')">Deny</button>
+                `;
+                bookingRequestsList.appendChild(requestDiv);
+            });
+        }
+    
+        async function updateBookingStatus(room_num, status) {
+            const { data, error } = await connect.from('room_details').update({ status }).eq('room_num', room_num);
+            if (error) {
+                console.error('Error updating booking status:', error);
+                return;
+            }
+    
+            fetchBookingRequests();
+        }
+
+        async function fetchFeedback() {
+            const { data, error } = await connect.from('feedback').select();
+            if (error) {
+                console.error('Error fetching feedback:', error);
+                return;
+            }
+    
+            const feedbackList = document.getElementById('feedback-list');
+            feedbackList.innerHTML = '';
+    
+            data.forEach(feedback => {
+                const feedbackDiv = document.createElement('div');
+                feedbackDiv.className = 'feedback';
+                feedbackDiv.innerHTML = `
+                    <h3>Feedback</h3>
+                    <p>${feedback.feedback_text}</p>
+                    <p>Date Submitted: ${feedback.date_submitted}</p>
+                `;
+                feedbackList.appendChild(feedbackDiv);
+            });
+        }
+
         function logout() {
-        connect.auth.signOut().then(() => {
-            window.location.href = 'login.html';
+        const { auth } = createClient(supabaseUrl, supabaseKey);
+
+        auth.signOut().then(response => {
+          if (response.error) {
+            console.error('Error during logout:', response.error.message);
+            return;
+          }
+
+          window.location.href = 'login.html';
         }).catch(error => {
-            console.error('Error during logout:', error.message);
+          console.error('Error during logout:', error.message);
         });
-    }
+      }
     </script>
 </body>
 </html>

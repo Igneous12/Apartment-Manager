@@ -172,7 +172,7 @@
         fetchMaintenanceRequests();
       }
 
-async function fetchRooms() {
+      async function fetchRooms() {
   const { data, error } = await connect.from('room_details').select();
   if (error) {
     console.error('Error fetching rooms:', error);
@@ -188,8 +188,10 @@ async function fetchRooms() {
     let buttonHtml = '';
     if (room.status === 'booked') {
       buttonHtml = `<button onclick="unbookRoom(${room.room_num})">Undo Booking</button>`;
-    } else {
+    } else if (room.status === 'available') {
       buttonHtml = `<button onclick="bookRoom(${room.room_num})">Book</button>`;
+    } else if (room.status === 'pending') {
+      buttonHtml = `<button disabled>Book (Pending)</button>`;
     }
     roomDiv.innerHTML = `
       <h2>Room Number: ${room.room_num}</h2>
@@ -202,8 +204,9 @@ async function fetchRooms() {
   });
 }
 
+
 async function bookRoom(room_num) {
-  const { data, error } = await connect.from('room_details').update({ status: 'booked' }).eq('room_num', room_num);
+  const { data, error } = await connect.from('room_details').update({ status: 'pending' }).eq('room_num', room_num);
 
   if (error) {
     console.error('Error booking room:', error);
@@ -214,17 +217,30 @@ async function bookRoom(room_num) {
   fetchRooms();
 }
 
-async function unbookRoom(room_num) {
-  const { data, error } = await connect.from('room_details').update({ status: 'available' }).eq('room_num', room_num);
 
-  if (error) {
-    console.error('Error unbooking room:', error);
-    return;
-  }
+      async function bookRoom(room_num) {
+        const { data, error } = await connect.from('room_details').update({ status: 'pending' }).eq('room_num', room_num);
 
-  alert('Room unbooking request submitted successfully!');
-  fetchRooms();
-}
+        if (error) {
+          console.error('Error booking room:', error);
+          return;
+        }
+
+        alert('Room booking request submitted successfully!');
+        fetchRooms();
+      }
+
+      async function unbookRoom(room_num) {
+        const { data, error } = await connect.from('room_details').update({ status: 'available' }).eq('room_num', room_num);
+
+        if (error) {
+          console.error('Error unbooking room:', error);
+          return;
+        }
+
+        alert('Room unbooking request submitted successfully!');
+        fetchRooms();
+      }
 
       async function submitFeedback() {
         const feedback_text = document.getElementById('feedback-text').value;
