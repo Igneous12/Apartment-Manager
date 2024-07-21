@@ -106,8 +106,9 @@
 
         const profile = data[0];
         document.getElementById('profile-name').value = '';
-        document.getElementById('profile-age').value = '';
         document.getElementById('profile-phone').value = '';
+        document.getElementById('profile-email').value = '';
+        document.getElementById('username').textContent = `TENANT ${profile.name.toUpperCase()}`;
     }
 
     async function updateProfile() {
@@ -226,16 +227,16 @@
         roomsList.innerHTML = '';
 
         data.forEach(room => {
-          const roomDiv = document.createElement('div');
-          roomDiv.className = 'room';
-          roomDiv.innerHTML = `
-            <h2>Room Number: ${room.room_num}</h2>
-            <p>Price: ₱${room.room_price}</p>
-            <p>Room Size: ${room.room_size}</p>
-            <p>Status: ${room.status}</p>
-            <button onclick="bookRoom(${room.room_num})">Book</button>
-          `;
-          roomsList.appendChild(roomDiv);
+            const roomDiv = document.createElement('div');
+            roomDiv.className = 'room';
+            roomDiv.innerHTML = `
+                <h2>Room Number: ${room.room_num}</h2>
+                <p>Price: ₱${room.room_price}</p>
+                <p>Room Size: ${room.room_size}</p>
+                <p>Status: ${room.status}</p>
+                ${room.status !== 'booked' ? `<button onclick="bookRoom(${room.room_num})">Book</button>` : `<button disabled>Booked</button>`}
+            `;
+            roomsList.appendChild(roomDiv);
         });
     }
 

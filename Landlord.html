@@ -11,6 +11,7 @@
 <body>
     <header>
         <h1>Apartment Manager</h1>
+        <div id="username">Tenant</div>
     </header>
     <nav>
         <ul>
@@ -256,19 +257,59 @@ async function fetchRooms() {
             if (confirmation) {
                 const { data, error } = await connect.from('room_details').delete().eq('room_num', room_num);
     
-                if (error) {
-                    console.error('Error deleting room:', error);
-                    alert('Room not deleted');
-                    return;
-                }
-    
-                alert('Successfully deleted room');
-                fetchRooms();
-            } else {
-                alert('Room not deleted');
+            if (error) {
+                console.error('Error deleting room:', error);
+                return;
             }
+    
+            fetchRooms();
         }
+    
+        async function fetchBookingRequests() {
+            const { data, error } = await connect.from('booking_requests').select().eq('status', 'Pending');
+            if (error) {
+                console.error('Error fetching booking requests:', error);
+                return;
+            }
 
+            const bookingRequestsList = document.getElementById('booking-requests-list');
+            bookingRequestsList.innerHTML = '';
+
+            data.forEach(request => {
+                const requestDiv = document.createElement('div');
+                requestDiv.className = 'booking-request';
+                requestDiv.innerHTML = `
+                    <h2>Booking Request</h2>
+                    <p>User ID: ${request.user_id}</p>
+                    <p>Room Number: ${request.room_num}</p>
+                    <p>Status: ${request.status}</p>
+                    <p>Date Requested: ${request.date_requested}</p>
+                `;
+                bookingRequestsList.appendChild(requestDiv);
+            });
+        }
+        }
+        // Call fetchBookingRequests periodically
+        setInterval(fetchBookingRequests, 10000); // every 10 seconds
+    
+        async function approveRequest(id) {
+            const { data, error } = await connect.from('booking_requests').update({ status: 'approved' }).eq('id', id);
+            if (error) {
+                console.error('Error approving request:', error);
+                return;
+            }
+            fetchBookingRequests();
+        }
+    
+        async function rejectRequest(id) {
+            const { data, error } = await connect.from('booking_requests').update({ status: 'rejected' }).eq('id', id);
+            if (error) {
+                console.error('Error rejecting request:', error);
+                return;
+            }
+            fetchBookingRequests();
+        }
+    
     async function unbookRoom(room_num) {
     const confirmation = confirm(`Are you sure you want to unbook the room number: ${room_num}?`);
     if (confirmation) {
