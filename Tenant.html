@@ -153,8 +153,7 @@
     }
 
     async function fetchPaymentHistory() {
-    const tenantId = 1008; 
-    const { data, error } = await connect.from('payment_details').select().eq('tenant_id', tenantId);
+    const { data, error } = await connect.from('payment_details').select();
     
     if (error) {
         console.error('Error fetching payment history:', error);

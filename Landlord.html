@@ -21,6 +21,7 @@
             <li><a onclick="showSection('contact')">Room Details</a></li>
             <li><a onclick="showSection('booking-requests')">Booking Requests</a></li>
             <li><a onclick="showSection('feedback')">Feedback</a></li>
+            <li><a onclick="showSection('payment')">Payment History</a></li>
             <li><a onclick="logout()">Logout</a></li>
         </ul>
     </nav>
@@ -67,6 +68,14 @@
             <!-- Feedback will be listed here -->
         </div>
     </div>
+    <div class="container payment" id="payment">
+        <div class="form-container">
+          <h2>Payment History</h2>
+        </div>
+          <div id="payment-list">
+              <!-- Payment history will be listed here -->
+        </div>
+      </div>
     <footer>
         <p>&copy; 2024 Apartment Manager. All rights reserved.</p>
     </footer>
@@ -89,6 +98,7 @@
             fetchRooms();
             fetchBookingRequests();
             fetchFeedback();
+            fetchPaymentHistory();
         });
     
         async function fetchClients() {
@@ -412,6 +422,30 @@ async function removeFeedback(feedbackId) {
 
     alert('Feedback removed successfully');
     fetchFeedback();
+}
+
+async function fetchPaymentHistory() {
+    const { data, error } = await connect.from('payment_details').select();
+    
+    if (error) {
+        console.error('Error fetching payment history:', error);
+        return;
+    }
+    const paymentHistoryList = document.getElementById('payment-list');
+    paymentHistoryList.innerHTML = '';
+
+        data.forEach(payment => {
+            const paymentDiv = document.createElement('div');
+            paymentDiv.className = 'room';
+            paymentDiv.innerHTML = `
+                <h3>Payment</h3>
+                <p>Date: ${payment.date || 'N/A'}</p>
+                <p>Amount: ₱${payment.amount}</p>
+                <p>Payment Method: ${payment.method}</p>
+            `;
+            paymentHistoryList.appendChild(paymentDiv);
+        });
+    
 }
 
         function logout() {
