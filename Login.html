@@ -47,7 +47,7 @@
             <button onclick="addClient()">Register</button>
             <p>Already have an account? <span class="toggle-link" onclick="toggleLoginRegister()">Login</span></p>
         </div>
-        </div>
+        <div class="display"></div>
     </div>
 
     <header>
@@ -101,85 +101,100 @@
             }
         }
 
-        
-    async function addClient() {
-        const password = document.getElementById('client-password').value;
-        const confirmPassword = document.getElementById('confirm-password').value;
+        async function addClient() {
+            const password = document.getElementById('client-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
 
-        if (password !== confirmPassword) {
-            alert('Passwords do not match');
-            document.getElementById('client-password').value = '';
-            document.getElementById('confirm-password').value = '';
-            return;
-        }
-
-        const name = document.getElementById('client-name').value;
-        const age = parseInt(document.getElementById('client-age').value);
-        const phone = document.getElementById('client-phone').value;
-        const email = document.getElementById('client-email').value;
-        const date = document.getElementById('client-date').value;
-        const role = document.getElementById('client-role').value;
-
-        if (!role) {
-            alert('Please select a role');
-            return;
-        }
-
-        const userId = await getNextUserId();
-        if (!userId) {
-            alert('Error generating user ID');
-            return;
-        }
-
-        console.log('Registering user with ID:', userId);
-
-        try {
-            const { error } = await connect.from('users').insert({
-                user_id: userId,
-                name: name,
-                age: age,
-                phone_number: phone,
-                email: email,
-                date_started: date,
-                password: password,
-                role: role
-            }, { returning: 'minimal' });
-
-            if (error) {
-                throw error;
+            if (password !== confirmPassword) {
+                alert('Passwords do not match');
+                document.getElementById('client-password').value = '';
+                document.getElementById('confirm-password').value = '';
+                return;
             }
 
-            alert('Successfully registered');
-            resetRegisterForm();
-        } catch (error) {
-            console.error('Error adding user:', error);
-            alert('Error adding user: ' + error.message);
+            const name = document.getElementById('client-name').value;
+            const age = parseInt(document.getElementById('client-age').value);
+            const phone = document.getElementById('client-phone').value;
+            const email = document.getElementById('client-email').value;
+            const date = document.getElementById('client-date').value;
+            const role = document.getElementById('client-role').value;
+
+            if (!role) {
+                alert('Please select a role');
+                return;
+            }
+
+            const userId = await getNextUserId();
+            if (!userId) {
+                alert('Error generating user ID');
+                return;
+            }
+
+            console.log('Registering user with ID:', userId);
+            const { data: Signup, error:ErrorSignup } = await supabase.auth.signUp({
+                email: email,
+                password: password,
+            });
+
+            if(ErrorSignup){
+                console.log(ErrorSignup)
+            }else{
+                try {
+                    const { error } = await connect.from('users').insert({
+                        user_id: userId,
+                        name: name,
+                        age: age,
+                        phone_number: phone,
+                        email: email,
+                        date_started: date,
+                        password: password,
+                        role: role
+                    }, { returning: 'minimal' });
+
+                    if (error) {
+                        throw error;
+                    }
+
+                    alert('Successfully registered');
+                    resetRegisterForm();
+                } catch (error) {
+                    console.error('Error adding user:', error);
+                    alert('Error adding user: ' + error.message);
+                }
         }
     }
-
-    function resetRegisterForm() {
-        document.getElementById('client-email').value = '';
-        document.getElementById('client-password').value = '';
-        document.getElementById('confirm-password').value = '';
-        document.getElementById('client-name').value = '';
-        document.getElementById('client-age').value = '';
-        document.getElementById('client-phone').value = '';
-        document.getElementById('client-date').value = '';
-        document.getElementById('client-role').value = '';
-    }
+        function resetRegisterForm() {
+            document.getElementById('client-email').value = '';
+            document.getElementById('client-password').value = '';
+            document.getElementById('confirm-password').value = '';
+            document.getElementById('client-name').value = '';
+            document.getElementById('client-age').value = '';
+            document.getElementById('client-phone').value = '';
+            document.getElementById('client-date').value = '';
+            document.getElementById('client-role').value = '';
+        }
 
         async function login() {
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
 
             try {
+                const { data:AuthuSer, error:AuthError } = await connect.auth.signInWithPassword({
+                    email: email,
+                    password: password,
+                });
+                
+                if(AuthError){
+                    alert("Wrong Details")
+                    return;
+                }
                 const { data: user, error } = await connect
-                    .from('users')
-                    .select('*')
-                    .eq('email', email)
-                    .eq('password', password)
-                    .single();
-
+                .from('users')
+                .select('*')
+                .eq('email', email)
+                .eq('password', password)
+                .single();
+                
                 if (error || !user) {
                     alert('Invalid username or password');
                     console.error('Login error:', error);
@@ -197,6 +212,7 @@
             } catch (error) {
                 console.error('Login error:', error);
                 alert('An error occurred during login');
+                
             }
         }
 
@@ -228,7 +244,7 @@
             showSection('home');
             document.getElementById('login-email').focus();
             document.getElementById('login-password').value = '';
-        }
+        }               
 
         function toggleLoginRegister() {
             const loginBox = document.querySelector('.login-box');
@@ -243,14 +259,21 @@
         }
 
         function togglePasswordVisibility() {
-        const passwordInput = document.getElementById('client-password');
-        const confirmPasswordInput = document.getElementById('confirm-password');
-        const showPassword = document.getElementById('show-password').checked;
-        const showConfirmPassword = document.getElementById('show-confirm-password').checked;
-        
-        passwordInput.type = showPassword ? 'text' : 'password';
-        confirmPasswordInput.type = showConfirmPassword ? 'text' : 'password';
-    }
+            const passwordInput = document.getElementById('client-password');
+            const confirmPasswordInput = document.getElementById('confirm-password');
+            const showPassword = document.getElementById('show-password').checked;
+            const showConfirmPassword = document.getElementById('show-confirm-password').checked;
+            
+            passwordInput.type = showPassword ? 'text' : 'password';
+            confirmPasswordInput.type = showConfirmPassword ? 'text' : 'password';
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const { data, error } = await connect.auth.getSession();
+            
+            
+          console.log(data)
+        });
     </script>
 </body>
 </html>

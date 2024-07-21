@@ -11,7 +11,7 @@
 <body>
     <header>
         <h1>Apartment Manager</h1>
-        <div id="username">Tenant</div>
+        <div id="username">Landlord</div>
     </header>
     <nav>
         <ul>
@@ -92,13 +92,21 @@
             document.getElementById(sectionId).style.display = 'block';
         }
     
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             showSection('home');
             fetchClients();
             fetchRooms();
             fetchBookingRequests();
             fetchFeedback();
             fetchPaymentHistory();
+
+            const { data, error } = await connect.auth.getSession();
+            const div = document.querySelector('.display');
+            console.log(data.session)
+            if (!div) {
+                console.error('Display element not found');
+                return;
+            }
         });
     
         async function fetchClients() {
@@ -462,6 +470,9 @@ async function fetchPaymentHistory() {
           console.error('Error during logout:', error.message);
         });
       }
+
+
+      
     </script>
 </body>
 </html>
