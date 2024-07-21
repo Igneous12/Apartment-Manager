@@ -30,19 +30,32 @@
         <p>Manage your profile, Book A room, and more.</p>
     </div>
     <div class="container profile" id="profile">
-      <h2>Profile</h2>
-      <div class="form-container">
-        <input type="text" id="profile-name" placeholder="Name">
-        <input type="number" id="profile-age" placeholder="Age">
-        <input type="text" id="profile-phone" placeholder="Phone Number">
-        <button onclick="updateProfile()">Update Profile</button>
-      </div>
+        <h2>Profile</h2>
+        <div class="form-container">
+            <input type="text" id="profile-name" placeholder="Name">
+            <input type="number" id="profile-age" placeholder="Age">
+            <input type="text" id="profile-phone" placeholder="Phone Number">
+            <button onclick="updateProfile()">Update Profile</button>
+        </div>
     </div>
     
     <div class="container payment" id="payment">
+      <div class="form-container">
         <h2>Payment History</h2>
-        <div id="payment-history-list">
+      </div>
+        <div id="payment-list">
             <!-- Payment history will be listed here -->
+      </div>
+        <h3>Add New Payment</h3>
+        <div class="form-container">
+            <input type="number" id="payment-amount" placeholder="Amount" step="0.01" required>
+            <input type="date" id="payment-date" required>
+            <select id="payment-method" required>
+                <option value="" disabled selected>Select Payment Method</option>
+                <option value="Card">Card</option>
+                <option value="Cash">Cash</option>
+            </select>
+            <button onclick="addPayment()">Add Payment</button>
         </div>
     </div>
     <div class="container feedback" id="feedback">
@@ -80,140 +93,129 @@
         showSection('home');
         fetchProfile();
         fetchPaymentHistory();
-        fetchMaintenanceRequests();
-        fetchAvailableRooms(); // Change to fetch available rooms only
+        fetchAvailableRooms();
       });
 
       async function fetchProfile() {
-    const { data, error } = await connect.from('users').select().eq('role', 'tenant');
+        const { data, error } = await connect.from('users').select().eq('role', 'tenant');
+        
+        if (error) {
+            console.error('Error fetching profile:', error);
+            return;
+        }
+
+        const profile = data[0];
+        document.getElementById('profile-name').value = '';
+        document.getElementById('profile-age').value = '';
+        document.getElementById('profile-phone').value = '';
+    }
+
+    async function updateProfile() {
+        const confirmation = confirm('Are you sure you want to update your information?');
+
+        if (!confirmation) {
+            return;
+        }
+
+        const email = prompt('Please enter your email to confirm changes:');
+        
+        if (!email) {
+            alert('Email is required to update profile.');
+            return;
+        }
+        
+        const { data: user, error: fetchError } = await connect.from('users').select().eq('email', email).single();
+        
+        if (fetchError) {
+            alert('Error fetching user profile: ' + fetchError.message);
+            return;
+        }
+        
+        if (!user) {
+            alert('Email not found in the database.');
+            return;
+        }
+        
+        const name = document.getElementById('profile-name').value;
+        const age = document.getElementById('profile-age').value;
+        const phone_number = document.getElementById('profile-phone').value;
+
+        const { data, error } = await connect.from('users').update({ name, age, phone_number }).eq('email', email);
+
+        if (error) {
+            alert('Error updating profile: ' + error.message);
+            return;
+        }
+
+        alert('Profile updated successfully!');
+        fetchProfile();
+    }
+
+    async function fetchPaymentHistory() {
+    const tenantId = 1008; 
+    const { data, error } = await connect.from('payment_details').select().eq('tenant_id', tenantId);
     
     if (error) {
-        console.error('Error fetching profile:', error);
+        console.error('Error fetching payment history:', error);
         return;
     }
 
-    const profile = data[0];
-    document.getElementById('profile-name').value = '';
-    document.getElementById('profile-age').value = ''; // Populate the age field
-    document.getElementById('profile-phone').value = '';
-    document.getElementById('profile-email').value = '';
-}
+    console.log('Fetched payment history:', data); // Log data for debugging
 
+    const paymentHistoryList = document.getElementById('payment-list');
+    paymentHistoryList.innerHTML = '';
 
-async function updateProfile() {
-
-  const confirmation = confirm('Are you sure you want to update your information?');
-
-if (!confirmation) {
-  document.getElementById('profile-name').value = '';
-  document.getElementById('profile-age').value = '';
-  document.getElementById('profile-phone').value = '';
-    return; // Exit the function if the user clicks "No"
-}
-
-  const email = prompt('Please enter your email to confirm changes:');
-  
-  if (!email) {
-    alert('Email is required to update profile.');
-    return;
-  }
-  
-  const { data: user, error: fetchError } = await connect.from('users').select().eq('email', email).single();
-  
-  if (fetchError) {
-    alert('Error fetching user profile: ' + fetchError.message);
-    return;
-  }
-  
-  if (!user) {
-    alert('Email not found in the database.');
-    return;
-  }
-  
-  const name = document.getElementById('profile-name').value;
-  const age = document.getElementById('profile-age').value;
-  const phone_number = document.getElementById('profile-phone').value;
-
-  const { data, error } = await connect.from('users').update({ name, age, phone_number }).eq('email', email);
-
-  if (error) {
-    alert('Error updating profile: ' + error.message);
-    return;
-  }
-
-  document.getElementById('profile-name').value = '';
-  document.getElementById('profile-age').value = '';
-  document.getElementById('profile-phone').value = '';
-
-  alert('Profile updated successfully!');
-  fetchProfile();
-}
-
-
-
-      async function fetchPaymentHistory() {
-        const { data, error } = await connect.from('payment_history').select().eq('tenant_id', 1); 
-        if (error) {
-          console.error('Error fetching payment history:', error);
-          return;
-        }
-
-        const paymentHistoryList = document.getElementById('payment-history-list');
-        paymentHistoryList.innerHTML = '';
-
+    if (data.length === 0) {
+        paymentHistoryList.innerHTML = '<p>No payments found.</p>';
+    } else {
         data.forEach(payment => {
-          const paymentDiv = document.createElement('div');
-          paymentDiv.className = 'payment-history';
-          paymentDiv.innerHTML = `
-            <h2>Payment</h2>
-            <p>Date: ${payment.date}</p>
-            <p>Amount: ₱${payment.amount}</p>
-            <p>Payment Method: ${payment.method}</p>
-          `;
-          paymentHistoryList.appendChild(paymentDiv);
+            const paymentDiv = document.createElement('div');
+            paymentDiv.className = 'payment-history';
+            paymentDiv.innerHTML = `
+                <h3>Payment</h3>
+                <p>Date: ${payment.date || 'N/A'}</p>
+                <p>Amount: ₱${payment.amount}</p>
+                <p>Payment Method: ${payment.method}</p>
+            `;
+            paymentHistoryList.appendChild(paymentDiv);
         });
-      }
+    }
+}
 
-      async function fetchMaintenanceRequests() {
-        const { data, error } = await connect.from('maintenance_requests').select().eq('tenant_id', 1); 
-        if (error) {
-          console.error('Error fetching maintenance requests:', error);
-          return;
+
+    async function addPayment() {
+        const amount = parseFloat(document.getElementById('payment-amount').value);
+        const date = document.getElementById('payment-date').value;
+        const method = document.getElementById('payment-method').value;
+        const tenantId = 1008;
+
+        if (isNaN(amount) || amount <= 0) {
+            alert('Please enter a valid amount.');
+            return;
         }
 
-        const maintenanceRequestsList = document.getElementById('maintenance-requests-list');
-        maintenanceRequestsList.innerHTML = '';
-
-        data.forEach(request => {
-          const requestDiv = document.createElement('div');
-          requestDiv.className = 'maintenance-request';
-          requestDiv.innerHTML = `
-            <h2>Maintenance Request</h2>
-            <p>Description: ${request.description}</p>
-            <p>Status: ${request.status}</p>
-            <p>Date Submitted: ${request.date_submitted}</p>
-          `;
-          maintenanceRequestsList.appendChild(requestDiv);
-        });
-      }
-
-      async function submitMaintenanceRequest() {
-        const description = document.getElementById('maintenance-description').value;
-
-        const { data, error } = await connect.from('maintenance_requests').insert([
-          { tenant_id: 1, description, status: 'Pending'} 
-        ]);
-
-        if (error) {
-          console.error('Error submitting maintenance request:', error);
-          return;
+        if (!method) {
+            alert('Please select a payment method.');
+            return;
         }
 
-        document.getElementById('maintenance-description').value = '';
-        fetchMaintenanceRequests();
-      }
+        const { data, error } = await connect.from('payment_details').insert([
+        { tenant_id: tenantId, amount, method, status: 'completed' }
+    ]);
 
-      async function fetchAvailableRooms() { // Updated function to fetch only available rooms
+      if (error) {
+          console.error('Error adding payment:', error);
+          alert('Error adding payment. Please try again.');
+      } else {
+          alert('Payment added successfully!');
+          fetchPaymentHistory(); // Refresh the payment history
+          document.getElementById('payment-amount').value = '';
+          document.getElementById('payment-date').value = '';
+          document.getElementById('payment-method').value = '';
+      }
+  }
+
+    async function fetchAvailableRooms() {
         const { data, error } = await connect.from('room_details').select().eq('status', 'available');
         if (error) {
           console.error('Error fetching available rooms:', error);
@@ -235,88 +237,69 @@ if (!confirmation) {
           `;
           roomsList.appendChild(roomDiv);
         });
-      }
-
-      async function bookRoom(room_num) {
-    // Prompt the user for their email
-    const email = prompt('Please enter your email address:');
-    
-    // Check if the email is not empty
-    if (!email) {
-        alert('Email is required to book the room.');
-        return;
     }
 
-    try {
-        // Check if the email exists in the 'users' table and get the role
-        const { data: userData, error: userError } = await connect
-            .from('users')
-            .select('email, role')
-            .eq('email', email);
-
-        if (userError) {
-            console.error('Error checking user email:', userError);
-            alert('Error checking user email.');
-            return;
-        }
-
-        if (!userData || userData.length === 0) {
-            alert('Email not found in the system. Please use a registered email.');
-            return;
-        }
-
-        const user = userData[0];
-        console.log('User role:', user.role); // Logging the user role for debugging
+    async function bookRoom(room_num) {
+        const email = prompt('Please enter your email address:');
         
-        // Check if the user role is 'tenant'
-        if (user.role !== 'tenant') {
-            alert('Only tenants can book rooms. Your role does not permit room booking.');
+        if (!email) {
+            alert('Email is required to book the room.');
             return;
         }
 
-        // Update the room details in the database
-        const { data, error } = await connect
-            .from('room_details')
-            .update({ 
-                status: 'pending',
-                booker: email // Store the email in the 'booker' column
-            })
-            .eq('room_num', room_num);
+        try {
+            const { data: userData, error: userError } = await connect
+                .from('users')
+                .select('email, role')
+                .eq('email', email);
 
-        if (error) {
-            console.error('Error booking room:', error);
-            alert('Error booking room.');
-            return;
+            if (userError) {
+                console.error('Error checking user email:', userError);
+                alert('Error checking user email.');
+                return;
+            }
+
+            if (!userData || userData.length === 0) {
+                alert('Email not found in the system. Please use a registered email.');
+                return;
+            }
+
+            const user = userData[0];
+            console.log('User role:', user.role);
+            
+            if (user.role !== 'tenant') {
+                alert('Only tenants can book rooms. Your role does not permit room booking.');
+                return;
+            }
+
+            const { data, error } = await connect
+                .from('room_details')
+                .update({ 
+                    status: 'pending',
+                    booker: email
+                })
+                .eq('room_num', room_num);
+
+            if (error) {
+                console.error('Error booking room:', error);
+                alert('Error booking room. Please try again later.');
+                return;
+            }
+
+            alert('Room booked successfully! Please wait for confirmation.');
+            fetchAvailableRooms();
+
+        } catch (error) {
+            console.error('Error during room booking:', error);
+            alert('An unexpected error occurred. Please try again later.');
         }
-
-        alert('Room booking request submitted successfully!');
-        fetchAvailableRooms(); // Refresh the list of available rooms
-    } catch (err) {
-        console.error('Unexpected error:', err);
-        alert('Unexpected error occurred. Please try again later.');
     }
-}
 
-
-
-
-      async function unbookRoom(room_num) {
-        const { data, error } = await connect.from('room_details').update({ status: 'available' }).eq('room_num', room_num);
-
-        if (error) {
-          console.error('Error unbooking room:', error);
-          return;
-        }
-
-        alert('Room unbooking request submitted successfully!');
-        fetchAvailableRooms(); // Refresh the list of available rooms
-      }
-
-      async function submitFeedback() {
+    async function submitFeedback() {
         const feedback_text = document.getElementById('feedback-text').value;
 
         const { data, error } = await connect.from('feedback').insert([
-          { tenant_id: 1, feedback_text, date_submitted: new Date().toISOString() }
+          {feedback_text, date_submitted: new Date().toISOString() }
         ]);
 
         if (error) {
@@ -328,7 +311,7 @@ if (!confirmation) {
         alert('Feedback submitted successfully!');
       }
 
-      function logout() {
+    function logout() {
         const { auth } = createClient(supabaseUrl, supabaseKey);
 
         auth.signOut().then(response => {
@@ -342,6 +325,7 @@ if (!confirmation) {
           console.error('Error during logout:', error.message);
         });
       }
+
     </script>
 </body>
 </html>
