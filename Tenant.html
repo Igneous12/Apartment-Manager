@@ -93,14 +93,17 @@
     }
 
     const profile = data[0];
-    document.getElementById('profile-name').value = profile.name;
-    document.getElementById('profile-age').value = profile.age; // Populate the age field
-    document.getElementById('profile-phone').value = profile.phone_number;
-    document.getElementById('profile-email').value = profile.gmail;
+    document.getElementById('profile-name').value = '';
+    document.getElementById('profile-age').value = ''; // Populate the age field
+    document.getElementById('profile-phone').value = '';
+    document.getElementById('profile-email').value = '';
 }
 
 
 async function updateProfile() {
+
+alert('Are you sure you want to update your information');
+
   const email = prompt('Please enter your email to confirm changes:');
   
   if (!email) {
@@ -130,6 +133,10 @@ async function updateProfile() {
     alert('Error updating profile: ' + error.message);
     return;
   }
+
+  document.getElementById('profile-name').value = '';
+  document.getElementById('profile-age').value = '';
+  document.getElementById('profile-phone').value = '';
 
   alert('Profile updated successfully!');
   fetchProfile();
