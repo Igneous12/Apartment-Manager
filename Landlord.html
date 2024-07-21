@@ -102,7 +102,7 @@
     
             data.forEach(client => {
                 const clientDiv = document.createElement('div');
-                clientDiv.className = 'client';
+                clientDiv.className = 'room';
                 clientDiv.innerHTML = `
                     <h2>${client.name}</h2>
                     <p>Age: ${client.age}</p>
@@ -253,7 +253,7 @@
 
     data.forEach(request => {
         const requestDiv = document.createElement('div');
-        requestDiv.className = 'request';
+        requestDiv.className = 'room';
         requestDiv.innerHTML = `
             <h2>Room ${request.room_num}</h2>
             <p>Price: ${request.room_price}</p>
@@ -270,6 +270,7 @@
 }
 
     
+   
     async function updateBookingStatus(room_num, status) {
     const confirmation = confirm(`Are you sure you want to ${status} the booking request for room number: ${room_num}?`);
     if (confirmation) {
@@ -284,7 +285,35 @@
         if (error) {
             console.error('Error updating booking status:', error);
             return;
+
+            const bookingRequestsList = document.getElementById('booking-requests-list');
+            bookingRequestsList.innerHTML = '';
+    
+            data.forEach(request => {
+                const requestDiv = document.createElement('div');
+                requestDiv.className = 'room';
+                requestDiv.innerHTML = `
+                    <h2>Room ${request.room_num}</h2>
+                    <p>Price: ${request.room_price}</p>
+                    <p>Size: ${request.room_size}</p>
+                    <p>Status: ${request.status}</p>
+                    <button onclick="updateBookingStatus(${request.room_num}, 'accepted')">Accept</button>
+                    <button onclick="updateBookingStatus(${request.room_num}, 'denied')">Deny</button>
+                `;
+                bookingRequestsList.appendChild(requestDiv);
+            });
         }
+    
+        async function updateBookingStatus(room_num, status) {
+            const { data, error } = await connect.from('room_details').update({ status }).eq('room_num', room_num);
+            if (error) {
+                console.error('Error updating booking status:', error);
+                return;
+            }
+    
+            fetchBookingRequests();
+        }
+
         fetchBookingRequests();
     } else {
         alert(`Booking request not ${status}`);
@@ -303,7 +332,7 @@ async function fetchFeedback() {
 
     data.forEach(feedback => {
         const feedbackDiv = document.createElement('div');
-        feedbackDiv.className = 'feedback';
+        feedbackDiv.className = 'room';
         feedbackDiv.innerHTML = `
             <h3>Feedback</h3>
             <p>${feedback.feedback_text}</p>
