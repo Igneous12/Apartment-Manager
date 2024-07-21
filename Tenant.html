@@ -11,14 +11,14 @@
 <body>
     <header>
         <h1>Apartment Manager</h1>
+        <div id="username">Tenant</div>
+        <h2></h2>
     </header>
     <nav>
         <ul>
             <li><a onclick="showSection('home')">Home</a></li>
             <li><a onclick="showSection('profile')">Profile</a></li>
             <li><a onclick="showSection('payment')">Payment History</a></li>
-            <li><a onclick="showSection('maintenance')">Maintenance Requests</a></li>
-            <li><a onclick="showSection('community')">Community</a></li>
             <li><a onclick="showSection('feedback')">Feedback</a></li>
             <li><a onclick="showSection('contact')">Room Listings</a></li>
             <li><a onclick="logout()">Logout</a></li>
@@ -44,22 +44,6 @@
             <!-- Payment history will be listed here -->
         </div>
     </div>
-    <div class="container maintenance" id="maintenance">
-        <h2>Maintenance Requests</h2>
-        <div class="form-container">
-            <input type="text" id="maintenance-description" placeholder="Description">
-            <button onclick="submitMaintenanceRequest()">Submit Request</button>
-        </div>
-        <div id="maintenance-requests-list">
-            <!-- Maintenance requests will be listed here -->
-        </div>
-    </div>
-    <div class="container community" id="community">
-        <h2>Community</h2>
-        <div id="community-board">
-            <!-- Community bulletin board will be here -->
-        </div>
-    </div>
     <div class="container feedback" id="feedback">
         <h2>Feedback</h2>
         <div class="form-container">
@@ -80,180 +64,198 @@
     </footer>
 
     <script>
-    const { createClient } = supabase;
-    const supabaseUrl = 'https://oqeboxqhdunykevlsngo.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xZWJveHFoZHVueWtldmxzbmdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTcxMjM1ODYsImV4cCI6MjAzMjY5OTU4Nn0.l59O6fS7QE9ldJziNYYzSNMeNmW6fnqDcJ2wImvaoIk';
-    const connect = createClient(supabaseUrl, supabaseKey);
+      const { createClient } = supabase;
+      const supabaseUrl = 'https://oqeboxqhdunykevlsngo.supabase.co';
+      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xZWJveHFoZHVueWtldmxzbmdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTcxMjM1ODYsImV4cCI6MjAzMjY5OTU4Nn0.l59O6fS7QE9ldJziNYYzSNMeNmW6fnqDcJ2wImvaoIk';
+      const connect = createClient(supabaseUrl, supabaseKey);
 
-    function showSection(sectionId) {
+      function showSection(sectionId) {
         const sections = document.querySelectorAll('.container');
         sections.forEach(section => section.style.display = 'none');
         document.getElementById(sectionId).style.display = 'block';
-    }
+      }
 
-    document.addEventListener('DOMContentLoaded', function() {
+      document.addEventListener('DOMContentLoaded', function() {
         showSection('home');
         fetchProfile();
         fetchPaymentHistory();
         fetchMaintenanceRequests();
         fetchRooms();
-    });
+      });
 
-    async function fetchProfile() {
+      async function fetchProfile() {
         const { data, error } = await connect.from('users').select().eq('role', 'tenant');
         if (error) {
-            console.error('Error fetching profile:', error);
-            return;
+          console.error('Error fetching profile:', error);
+          return;
         }
 
         const profile = data[0];
         document.getElementById('profile-name').value = profile.name;
         document.getElementById('profile-phone').value = profile.phone_number;
         document.getElementById('profile-email').value = profile.gmail;
-    }
+      }
 
-    async function updateProfile() {
+      async function updateProfile() {
         const name = document.getElementById('profile-name').value;
         const phone_number = document.getElementById('profile-phone').value;
         const gmail = document.getElementById('profile-email').value;
 
         const { data, error } = await connect.from('users').update({ name, phone_number, gmail }).eq('role', 'tenant');
         if (error) {
-            console.error('Error updating profile:', error);
-            return;
+          console.error('Error updating profile:', error);
+          return;
         }
 
         fetchProfile();
-    }
+      }
 
-    async function fetchPaymentHistory() {
-        const { data, error } = await connect.from('payment_history').select().eq('tenant_id', 1); // Assuming tenant_id is 1
+      async function fetchPaymentHistory() {
+        const { data, error } = await connect.from('payment_history').select().eq('tenant_id', 1); 
         if (error) {
-            console.error('Error fetching payment history:', error);
-            return;
+          console.error('Error fetching payment history:', error);
+          return;
         }
 
         const paymentHistoryList = document.getElementById('payment-history-list');
         paymentHistoryList.innerHTML = '';
 
         data.forEach(payment => {
-            const paymentDiv = document.createElement('div');
-            paymentDiv.className = 'payment-history';
-            paymentDiv.innerHTML = `
-                <h2>Payment</h2>
-                <p>Date: ${payment.date}</p>
-                <p>Amount: ₱${payment.amount}</p>
-                <p>Payment Method: ${payment.method}</p>
-            `;
-            paymentHistoryList.appendChild(paymentDiv);
+          const paymentDiv = document.createElement('div');
+          paymentDiv.className = 'payment-history';
+          paymentDiv.innerHTML = `
+            <h2>Payment</h2>
+            <p>Date: ${payment.date}</p>
+            <p>Amount: ₱${payment.amount}</p>
+            <p>Payment Method: ${payment.method}</p>
+          `;
+          paymentHistoryList.appendChild(paymentDiv);
         });
-    }
+      }
 
-    async function fetchMaintenanceRequests() {
-        const { data, error } = await connect.from('maintenance_requests').select().eq('tenant_id', 1); // Assuming tenant_id is 1
+      async function fetchMaintenanceRequests() {
+        const { data, error } = await connect.from('maintenance_requests').select().eq('tenant_id', 1); 
         if (error) {
-            console.error('Error fetching maintenance requests:', error);
-            return;
+          console.error('Error fetching maintenance requests:', error);
+          return;
         }
 
         const maintenanceRequestsList = document.getElementById('maintenance-requests-list');
         maintenanceRequestsList.innerHTML = '';
 
         data.forEach(request => {
-            const requestDiv = document.createElement('div');
-            requestDiv.className = 'maintenance-request';
-            requestDiv.innerHTML = `
-                <h2>Maintenance Request</h2>
-                <p>Description: ${request.description}</p>
-                <p>Status: ${request.status}</p>
-                <p>Date Submitted: ${request.date_submitted}</p>
-            `;
-            maintenanceRequestsList.appendChild(requestDiv);
+          const requestDiv = document.createElement('div');
+          requestDiv.className = 'maintenance-request';
+          requestDiv.innerHTML = `
+            <h2>Maintenance Request</h2>
+            <p>Description: ${request.description}</p>
+            <p>Status: ${request.status}</p>
+            <p>Date Submitted: ${request.date_submitted}</p>
+          `;
+          maintenanceRequestsList.appendChild(requestDiv);
         });
-    }
+      }
 
-    async function submitMaintenanceRequest() {
+      async function submitMaintenanceRequest() {
         const description = document.getElementById('maintenance-description').value;
 
         const { data, error } = await connect.from('maintenance_requests').insert([
-            { tenant_id: 1, description, status: 'Pending', date_submitted: new Date().toISOString() }
+          { tenant_id: 1, description, status: 'Pending'} 
         ]);
 
         if (error) {
-            console.error('Error submitting maintenance request:', error);
-            return;
+          console.error('Error submitting maintenance request:', error);
+          return;
         }
 
         document.getElementById('maintenance-description').value = '';
         fetchMaintenanceRequests();
+      }
+
+async function fetchRooms() {
+  const { data, error } = await connect.from('room_details').select();
+  if (error) {
+    console.error('Error fetching rooms:', error);
+    return;
+  }
+
+  const roomsList = document.getElementById('rooms-list');
+  roomsList.innerHTML = '';
+
+  data.forEach(room => {
+    const roomDiv = document.createElement('div');
+    roomDiv.className = 'room';
+    let buttonHtml = '';
+    if (room.status === 'booked') {
+      buttonHtml = `<button onclick="unbookRoom(${room.room_num})">Undo Booking</button>`;
+    } else {
+      buttonHtml = `<button onclick="bookRoom(${room.room_num})">Book</button>`;
     }
+    roomDiv.innerHTML = `
+      <h2>Room Number: ${room.room_num}</h2>
+      <p>Price: ₱${room.room_price}</p>
+      <p>Room Size: ${room.room_size}</p>
+      <p>Status: ${room.status}</p>
+      ${buttonHtml}
+    `;
+    roomsList.appendChild(roomDiv);
+  });
+}
 
-    async function fetchRooms() {
-        const { data, error } = await connect.from('room_details').select();
-        if (error) {
-            console.error('Error fetching rooms:', error);
-            return;
-        }
+async function bookRoom(room_num) {
+  const { data, error } = await connect.from('room_details').update({ status: 'booked' }).eq('room_num', room_num);
 
-        const roomsList = document.getElementById('rooms-list');
-        roomsList.innerHTML = '';
+  if (error) {
+    console.error('Error booking room:', error);
+    return;
+  }
 
-        data.forEach(room => {
-            const roomDiv = document.createElement('div');
-            roomDiv.className = 'room';
-            roomDiv.innerHTML = `
-                <h2>Room Number: ${room.room_num}</h2>
-                <p>Price: ₱${room.room_price}</p>
-                <p>Room Size: ${room.room_size}</p>
-                <button onclick="bookRoom(${room.room_num})">Book</button>
-            `;
-            roomsList.appendChild(roomDiv);
-        });
-    }
+  alert('Room booking request submitted successfully!');
+  fetchRooms();
+}
 
-    async function bookRoom(room_num) {
-        const { data, error } = await connect.from('booking_requests').insert([
-            { tenant_id: 1, room_num, status: 'Pending', date_requested: new Date().toISOString() }
-        ]);
+async function unbookRoom(room_num) {
+  const { data, error } = await connect.from('room_details').update({ status: 'available' }).eq('room_num', room_num);
 
-        if (error) {
-            console.error('Error booking room:', error);
-            return;
-        }
+  if (error) {
+    console.error('Error unbooking room:', error);
+    return;
+  }
 
-        alert('Room booking request submitted successfully!');
-    }
+  alert('Room unbooking request submitted successfully!');
+  fetchRooms();
+}
 
-    async function submitFeedback() {
+      async function submitFeedback() {
         const feedback_text = document.getElementById('feedback-text').value;
 
         const { data, error } = await connect.from('feedback').insert([
-            { tenant_id: 1, feedback_text, date_submitted: new Date().toISOString() }
+          { tenant_id: 1, feedback_text, date_submitted: new Date().toISOString() }
         ]);
 
         if (error) {
-            console.error('Error submitting feedback:', error);
-            return;
+          console.error('Error submitting feedback:', error);
+          return;
         }
 
         document.getElementById('feedback-text').value = '';
         alert('Feedback submitted successfully!');
-    }
+      }
 
-    function logout() {
+      function logout() {
         const { auth } = createClient(supabaseUrl, supabaseKey);
 
         auth.signOut().then(response => {
-            if (response.error) {
-                console.error('Error during logout:', response.error.message);
-                return;
-            }
-            // Redirect or perform any other action after logout
-            window.location.href = 'login.html';
+          if (response.error) {
+            console.error('Error during logout:', response.error.message);
+            return;
+          }
+
+          window.location.href = 'login.html';
         }).catch(error => {
-            console.error('Error during logout:', error.message);
+          console.error('Error during logout:', error.message);
         });
-    }
+      }
     </script>
 </body>
 </html>
