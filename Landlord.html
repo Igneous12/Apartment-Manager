@@ -158,21 +158,39 @@
         }
     
         async function addRoom() {
-            const room_num = parseInt(document.getElementById('room-num').value);
-            const room_price = parseFloat(document.getElementById('room-price').value);
-            const room_size = document.getElementById('room-size').value;
-    
-            const { data, error } = await connect.from('room_details').insert([
-                { room_num, room_price, room_size, status: 'available' }
-            ]);
-    
-            if (error) {
-                console.error('Error adding room:', error);
-                return;
-            }
-    
-            fetchRooms();
-        }
+    const room_num = document.getElementById('room-num').value;
+    const room_price = document.getElementById('room-price').value;
+    const room_size = document.getElementById('room-size').value;
+
+    // Check if any field is empty
+    if (!room_num || !room_price || !room_size) {
+        alert('All fields are required.');
+        return;
+    }
+
+    const parsedRoomNum = parseInt(room_num);
+    const parsedRoomPrice = parseFloat(room_price);
+
+    const { data, error } = await connect.from('room_details').insert([
+        { room_num: parsedRoomNum, room_price: parsedRoomPrice, room_size, status: 'available' }
+    ]);
+
+    if (error) {
+        console.error('Error adding room:', error);
+        alert('Error adding room');
+        return;
+    }
+
+    // Reset input fields
+    document.getElementById('room-num').value = '';
+    document.getElementById('room-price').value = '';
+    document.getElementById('room-size').value = '';
+
+    alert('Room added successfully');
+    fetchRooms();
+}
+
+
     
         async function fetchRooms() {
     const { data, error } = await connect.from('room_details').select().eq('status', 'available');
