@@ -175,35 +175,36 @@
         }
     
         async function fetchRooms() {
-            const { data, error } = await connect.from('room_details').select();
-            if (error) {
-                console.error('Error fetching rooms:', error);
-                return;
-            }
-    
-            const roomsList = document.getElementById('rooms-list');
-            roomsList.innerHTML = '';
-    
-            data.forEach(room => {
-                const roomDiv = document.createElement('div');
-                roomDiv.className = 'room';
-                roomDiv.innerHTML = `
-                    <h2>Room ${room.room_num}</h2>
-                    <p>Price: ${room.room_price}</p>
-                    <p>Size: ${room.room_size}</p>
-                    <p>Status: ${room.status}</p>
-                `;
-                const editButton = document.createElement('button');
-                editButton.innerText = "Edit";
-                editButton.addEventListener('click', () => editRoom(room.room_num));
-                roomDiv.appendChild(editButton);
-                const deleteButton = document.createElement('button');
-                deleteButton.innerText = "Delete";
-                deleteButton.addEventListener('click', () => deleteRoom(room.room_num));
-                roomDiv.appendChild(deleteButton);
-                roomsList.appendChild(roomDiv);
-            });
-        }
+    const { data, error } = await connect.from('room_details').select().eq('status', 'available');
+    if (error) {
+        console.error('Error fetching rooms:', error);
+        return;
+    }
+
+    const roomsList = document.getElementById('rooms-list');
+    roomsList.innerHTML = '';
+
+    data.forEach(room => {
+        const roomDiv = document.createElement('div');
+        roomDiv.className = 'room';
+        roomDiv.innerHTML = `
+            <h2>Room ${room.room_num}</h2>
+            <p>Price: ${room.room_price}</p>
+            <p>Size: ${room.room_size}</p>
+            <p>Status: ${room.status}</p>
+        `;
+        const editButton = document.createElement('button');
+        editButton.innerText = "Edit";
+        editButton.addEventListener('click', () => editRoom(room.room_num));
+        roomDiv.appendChild(editButton);
+        const deleteButton = document.createElement('button');
+        deleteButton.innerText = "Delete";
+        deleteButton.addEventListener('click', () => deleteRoom(room.room_num));
+        roomDiv.appendChild(deleteButton);
+        roomsList.appendChild(roomDiv);
+    });
+}
+
     
         async function editRoom(room_num) {
             const field = prompt("Enter the field you want to update (room_num, room_price, room_size, status):");
@@ -240,62 +241,80 @@
             }
         }
 
-        async function fetchBookingRequests() {
-            const { data, error } = await connect.from('room_details').select('room_num, room_price, room_size, status').eq('status', 'pending');
-            if (error) {
-                console.error('Error fetching booking requests:', error);
-                return;
-            }
+    async function fetchBookingRequests() {
+    const { data, error } = await connect.from('room_details').select('room_num, room_price, room_size, status').eq('status', 'pending');
+    if (error) {
+        console.error('Error fetching booking requests:', error);
+        return;
+    }
+
+    const bookingRequestsList = document.getElementById('booking-requests-list');
+    bookingRequestsList.innerHTML = '';
+
+    data.forEach(request => {
+        const requestDiv = document.createElement('div');
+        requestDiv.className = 'request';
+        requestDiv.innerHTML = `
+            <h2>Room ${request.room_num}</h2>
+            <p>Price: ${request.room_price}</p>
+            <p>Size: ${request.room_size}</p>
+            <p>Status: ${request.status}</p>
+            <button onclick="updateBookingStatus(${request.room_num}, 'accepted')">Accept</button>
+            <button onclick="updateBookingStatus(${request.room_num}, 'denied')">Deny</button>
+        `;
+        const containerDiv = document.createElement('div');
+        containerDiv.className = 'booking-request-container';
+        containerDiv.appendChild(requestDiv);
+        bookingRequestsList.appendChild(containerDiv);
+    });
+}
+
     
-            const bookingRequestsList = document.getElementById('booking-requests-list');
-            bookingRequestsList.innerHTML = '';
-    
-            data.forEach(request => {
-                const requestDiv = document.createElement('div');
-                requestDiv.className = 'request';
-                requestDiv.innerHTML = `
-                    <h2>Room ${request.room_num}</h2>
-                    <p>Price: ${request.room_price}</p>
-                    <p>Size: ${request.room_size}</p>
-                    <p>Status: ${request.status}</p>
-                    <button onclick="updateBookingStatus(${request.room_num}, 'accepted')">Accept</button>
-                    <button onclick="updateBookingStatus(${request.room_num}, 'denied')">Deny</button>
-                `;
-                bookingRequestsList.appendChild(requestDiv);
-            });
-        }
-    
-        async function updateBookingStatus(room_num, status) {
-            const { data, error } = await connect.from('room_details').update({ status }).eq('room_num', room_num);
-            if (error) {
-                console.error('Error updating booking status:', error);
-                return;
-            }
-    
-            fetchBookingRequests();
+    async function updateBookingStatus(room_num, status) {
+    const confirmation = confirm(`Are you sure you want to ${status} the booking request for room number: ${room_num}?`);
+    if (confirmation) {
+        let updateStatus = status;
+        if (status === 'denied') {
+            updateStatus = 'available';
+        } else if (status === 'accepted') {
+            updateStatus = 'booked';
         }
 
-        async function fetchFeedback() {
-            const { data, error } = await connect.from('feedback').select();
-            if (error) {
-                console.error('Error fetching feedback:', error);
-                return;
-            }
-    
-            const feedbackList = document.getElementById('feedback-list');
-            feedbackList.innerHTML = '';
-    
-            data.forEach(feedback => {
-                const feedbackDiv = document.createElement('div');
-                feedbackDiv.className = 'feedback';
-                feedbackDiv.innerHTML = `
-                    <h3>Feedback</h3>
-                    <p>${feedback.feedback_text}</p>
-                    <p>Date Submitted: ${feedback.date_submitted}</p>
-                `;
-                feedbackList.appendChild(feedbackDiv);
-            });
+        const { data, error } = await connect.from('room_details').update({ status: updateStatus }).eq('room_num', room_num);
+        if (error) {
+            console.error('Error updating booking status:', error);
+            return;
         }
+        fetchBookingRequests();
+    } else {
+        alert(`Booking request not ${status}`);
+    }
+}
+
+async function fetchFeedback() {
+    const { data, error } = await connect.from('feedback').select();
+    if (error) {
+        console.error('Error fetching feedback:', error);
+        return;
+    }
+
+    const feedbackList = document.getElementById('feedback-list');
+    feedbackList.innerHTML = '';
+
+    data.forEach(feedback => {
+        const feedbackDiv = document.createElement('div');
+        feedbackDiv.className = 'feedback';
+        feedbackDiv.innerHTML = `
+            <h3>Feedback</h3>
+            <p>${feedback.feedback_text}</p>
+            <p>Date Submitted: ${feedback.date_submitted}</p>
+        `;
+        const containerDiv = document.createElement('div');
+        containerDiv.className = 'feedback-container';
+        containerDiv.appendChild(feedbackDiv);
+        feedbackList.appendChild(containerDiv);
+    });
+}
 
         function logout() {
         const { auth } = createClient(supabaseUrl, supabaseKey);
