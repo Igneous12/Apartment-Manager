@@ -247,39 +247,56 @@ if (!confirmation) {
         return;
     }
 
-    // Check if the email exists in the 'users' table
-    const { data: userData, error: userError } = await connect
-        .from('users')
-        .select('email')
-        .eq('email', email);
+    try {
+        // Check if the email exists in the 'users' table and get the role
+        const { data: userData, error: userError } = await connect
+            .from('users')
+            .select('email, role')
+            .eq('email', email);
 
-    if (userError) {
-        console.error('Error checking user email:', userError);
-        return;
+        if (userError) {
+            console.error('Error checking user email:', userError);
+            alert('Error checking user email.');
+            return;
+        }
+
+        if (!userData || userData.length === 0) {
+            alert('Email not found in the system. Please use a registered email.');
+            return;
+        }
+
+        const user = userData[0];
+        console.log('User role:', user.role); // Logging the user role for debugging
+        
+        // Check if the user role is 'tenant'
+        if (user.role !== 'tenant') {
+            alert('Only tenants can book rooms. Your role does not permit room booking.');
+            return;
+        }
+
+        // Update the room details in the database
+        const { data, error } = await connect
+            .from('room_details')
+            .update({ 
+                status: 'pending',
+                booker: email // Store the email in the 'booker' column
+            })
+            .eq('room_num', room_num);
+
+        if (error) {
+            console.error('Error booking room:', error);
+            alert('Error booking room.');
+            return;
+        }
+
+        alert('Room booking request submitted successfully!');
+        fetchAvailableRooms(); // Refresh the list of available rooms
+    } catch (err) {
+        console.error('Unexpected error:', err);
+        alert('Unexpected error occurred. Please try again later.');
     }
-
-    if (userData.length === 0) {
-        alert('Email not found in the system. Please use a registered email.');
-        return;
-    }
-
-    // Update the room details in the database
-    const { data, error } = await connect
-        .from('room_details')
-        .update({ 
-            status: 'pending',
-            booker: email // Store the email in the 'booker' column
-        })
-        .eq('room_num', room_num);
-
-    if (error) {
-        console.error('Error booking room:', error);
-        return;
-    }
-
-    alert('Room booking request submitted successfully!');
-    fetchAvailableRooms(); // Refresh the list of available rooms
 }
+
 
 
 
