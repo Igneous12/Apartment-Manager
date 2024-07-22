@@ -334,22 +334,6 @@
             return;
         }
 
-        const encodedEmail = encodeURIComponent(tenantEmail);
-
-        const { data: user, error: userError } = await connect
-            .from('users')
-            .select('id')
-            .eq('email', encodedEmail)
-            .single();
-
-        if (userError) {
-            console.error('Error fetching user ID:', userError);
-            return;
-        }
-
-        const tenantId = user.id;
-        console.log('Tenant ID:', tenantId); // Log tenant ID
-
         const { data: rooms, error: roomsError } = await connect
             .from('room_details')
             .select()
@@ -385,6 +369,7 @@
         console.error('Error fetching my rooms:', error);
     }
 }
+
 
 
 
