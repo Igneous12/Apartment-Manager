@@ -36,6 +36,7 @@
         <ul>
             <li><a onclick="showSection('home')">Home</a></li>
             <li><a onclick="showSection('profile')">Profile</a></li>
+            <li><a onclick="showSection('bills')">Bills</a></li>
             <li><a onclick="showSection('payment')">Payment History</a></li>
             <li><a onclick="showSection('feedback')">Feedback</a></li>
             <li><a onclick="showSection('myRooms')">My Rooms</a></li>
@@ -55,6 +56,12 @@
             <input type="number" id="profile-age" placeholder="Age">
             <input type="text" id="profile-phone" placeholder="Phone Number">
             <button onclick="updateProfile()">Update Profile</button>
+        </div>
+    </div>
+    <div class="container bills" id="bills">
+        <h2>Bills</h2>
+        <div id="bills-list">
+            <!-- Bills will be listed here -->
         </div>
     </div>
     
@@ -116,9 +123,10 @@
     document.addEventListener('DOMContentLoaded', async function() {
     showSection('home');
     fetchProfile();
+    fetchBills(); 
     fetchPaymentHistory();
     fetchAvailableRooms();
-    fetchMyRooms(); // Add this line to fetch and display the booked rooms
+    fetchMyRooms(); 
 
         const { data, error } = await connect.auth.getSession();
             const div = document.querySelector('.display');
@@ -166,7 +174,7 @@ async function updateProfile() {
         }
 
         const email = sessionData.session.user.email;
-        console.log('User Email:', email); // Log the user email
+        console.log('User Email:', email); 
 
         const { data: user, error: fetchError } = await connect.from('users').select().eq('email', email).single();
 
@@ -192,15 +200,57 @@ async function updateProfile() {
         }
 
         alert('Profile updated successfully!');
-        fetchProfile(); // Assuming this function exists and refreshes the profile information on the page
+        fetchProfile();
     } catch (error) {
         alert('Unexpected error: ' + error.message);
     }
 }
 
+async function fetchBills() {
+    try {
+        const { data: sessionData, error: sessionError } = await connect.auth.getSession();
+
+        if (sessionError) {
+            console.error('Error getting session:', sessionError);
+            return;
+        }
+
+        if (!sessionData || !sessionData.session) {
+            console.error('No session data available');
+            return;
+        }
+
+        const tenantEmail = sessionData.session.user.email;
+
+        const { data, error } = await connect.from('bills').select().eq('tenant_gmail', tenantEmail);
+
+        if (error) {
+            console.error('Error fetching bills:', error);
+            return;
+        }
+
+        const billsList = document.getElementById('bills-list');
+        billsList.innerHTML = '';
+
+        data.forEach((bill) => {
+            const billDiv = document.createElement('div');
+            billDiv.className = 'room';
+            billDiv.innerHTML = `
+                <h2>Tenant Email: ${bill.tenant_gmail}</h2>
+                <p>Room Bill: ₱${bill.room_bill}</p>
+                <p>Water Bill: ₱${bill.water_bill}</p>
+                <p>Electricity Bill: ₱${bill.elec_bill}</p>
+                <p>Status: ${bill.status}</p>
+            `;
+            billsList.appendChild(billDiv);
+        });
+    } catch (error) {
+        console.error('Error fetching bills:', error);
+    }
+}
+
 
 async function fetchPaymentHistory() {
-    // Get the current session to retrieve the logged-in user's email
     const { data: sessionData, error: sessionError } = await connect.auth.getSession();
 
     if (sessionError) {
@@ -213,10 +263,8 @@ async function fetchPaymentHistory() {
         return;
     }
 
-    // Extract the email from the session
     const email = sessionData.session.user.email;
 
-    // Fetch payment details for the logged-in user
     const { data, error } = await connect.from('payment_details').select().eq('payer', email);
 
     if (error) {
@@ -283,7 +331,6 @@ async function displayWelcomeMessage() {
     }
 }
 
-// Call the function to display the welcome message when the page loads
 window.onload = displayWelcomeMessage;
 
 
@@ -291,7 +338,6 @@ async function addPayment() {
     const amount = parseFloat(document.getElementById('payment-amount').value);
     const method = document.getElementById('payment-method').value;
 
-    // Get the current session
     const { data: sessionData, error: sessionError } = await connect.auth.getSession();
 
     if (sessionError) {
@@ -306,7 +352,6 @@ async function addPayment() {
         return;
     }
 
-    // Extract the email from the session
     const email = sessionData.session.user.email;
 
     if (isNaN(amount) || amount <= 0) {
@@ -319,7 +364,6 @@ async function addPayment() {
         return;
     }
 
-    // Insert payment details along with the payer email
     const { data, error } = await connect.from('payment_details').insert([
         { amount, method, payer: email, status: 'Pending' }
     ]);
@@ -329,7 +373,7 @@ async function addPayment() {
         alert('Error adding payment. Please try again.');
     } else {
         alert('Payment added successfully!');
-        fetchPaymentHistory(); // Refresh the payment history
+        fetchPaymentHistory(); 
         document.getElementById('payment-amount').value = '';
         document.getElementById('payment-method').value = '';
     }
@@ -375,9 +419,8 @@ async function addPayment() {
         }
 
         const email = sessionData.session.user.email;
-        console.log('User Email:', email); // Log the user email
+        console.log('User Email:', email); 
 
-        // Fetch the user data to check the role
         const { data: userData, error: userError } = await connect
             .from('users')
             .select('email, role')
@@ -407,7 +450,7 @@ async function addPayment() {
             .from('room_details')
             .update({ 
                 status: 'pending',
-                booker: email // Ensure the booker field is updated with the tenant's email
+                booker: email 
             })
             .eq('room_num', room_num);
 
@@ -418,7 +461,7 @@ async function addPayment() {
         }
 
         alert('Room booked successfully! Please wait for confirmation.');
-        fetchAvailableRooms(); // Assuming this function exists to refresh the list of available rooms
+        fetchAvailableRooms(); 
 
     } catch (error) {
         console.error('Error during room booking:', error);
@@ -442,7 +485,7 @@ async function addPayment() {
         }
 
         const tenantEmail = sessionData.session.user.email;
-        console.log('Tenant Email:', tenantEmail); // Log tenant email
+        console.log('Tenant Email:', tenantEmail);
         
         if (!tenantEmail) {
             console.error('No email found in session');
@@ -453,14 +496,14 @@ async function addPayment() {
             .from('room_details')
             .select()
             .eq('booker', tenantEmail)
-            .eq('status', 'booked'); // Ensure we are checking for the correct status
+            .eq('status', 'booked'); 
 
         if (roomsError) {
             console.error('Error fetching booked rooms:', roomsError);
             return;
         }
 
-        console.log('Fetched Rooms:', rooms); // Log fetched rooms
+        console.log('Fetched Rooms:', rooms);
 
         const myRoomsList = document.getElementById('my-rooms-list');
         myRoomsList.innerHTML = '';
@@ -491,7 +534,6 @@ async function addPayment() {
 async function submitFeedback() {
     const feedback_text = document.getElementById('feedback-text').value;
 
-    // Get the current session
     const { data: sessionData, error: sessionError } = await connect.auth.getSession();
 
     if (sessionError) {
@@ -504,10 +546,8 @@ async function submitFeedback() {
         return;
     }
 
-    // Extract the email from the session
     const email = sessionData.session.user.email;
 
-    // Insert feedback along with the feedbacker email
     const { data, error } = await connect.from('feedback').insert([
         { feedback_text, date_submitted: new Date().toISOString(), feedbacker: email }
     ]);

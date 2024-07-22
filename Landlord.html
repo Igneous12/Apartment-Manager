@@ -21,6 +21,7 @@
             <li><a onclick="showSection('contact')">Room Details</a></li>
             <li><a onclick="showSection('booking-requests')">Booking Requests</a></li>
             <li><a onclick="showSection('feedback')">Feedback</a></li>
+            <li><a onclick="showSection('bills')">Tenant Bills</a></li>
             <li><a onclick="showSection('payment')">Payment History</a></li>
             <li><a onclick="logout()">Logout</a></li>
         </ul>
@@ -76,6 +77,20 @@
               <!-- Payment history will be listed here -->
         </div>
       </div>
+      <div class="container bills" id="bills">
+        <div class="form-container">
+            <h2>Tenant Bills</h2>
+            <input type="email" id="tenant-email" placeholder="Tenant Email">
+            <input type="number" id="room-bill" placeholder="Room Bill">
+            <input type="number" id="elec-bill" placeholder="Electricity Bill">
+            <input type="number" id="water-bill" placeholder="Water Bill">
+            <button onclick="addBill()">Add Bill</button>
+        </div>
+        <div id="bills-list">
+            <!-- Tenant bills will be listed here -->
+        </div>
+    </div>
+    
     <footer>
         <p>&copy; 2024 Apartment Manager. All rights reserved.</p>
     </footer>
@@ -99,6 +114,7 @@
             fetchBookingRequests();
             fetchFeedback();
             fetchPaymentHistory();
+            fetchBills();
 
             const { data, error } = await connect.auth.getSession();
             const div = document.querySelector('.display');
@@ -176,12 +192,11 @@
             }
         }
     
-        async function addRoom() {
+    async function addRoom() {
     const room_num = document.getElementById('room-num').value;
     const room_price = document.getElementById('room-price').value;
     const room_size = document.getElementById('room-size').value;
 
-    // Check if any field is empty
     if (!room_num || !room_price || !room_size) {
         alert('All fields are required.');
         return;
@@ -200,7 +215,6 @@
         return;
     }
 
-    // Reset input fields
     document.getElementById('room-num').value = '';
     document.getElementById('room-price').value = '';
     document.getElementById('room-size').value = '';
@@ -238,7 +252,6 @@ async function fetchRooms() {
         deleteButton.addEventListener('click', () => deleteRoom(room.room_num));
         roomDiv.appendChild(deleteButton);
 
-        // Add unbook button only for booked rooms
         if (room.status === 'booked') {
             const unbookButton = document.createElement('button');
             unbookButton.innerText = "Unbook";
@@ -307,8 +320,7 @@ async function fetchRooms() {
             });
         }
         }
-        // Call fetchBookingRequests periodically
-        setInterval(fetchBookingRequests, 10000); // every 10 seconds
+        setInterval(fetchBookingRequests, 10000); 
     
         async function approveRequest(id) {
             const { data, error } = await connect.from('booking_requests').update({ status: 'approved' }).eq('id', id);
@@ -388,7 +400,7 @@ async function updateBookingStatus(room_num, status) {
         }
 
         fetchBookingRequests();
-        fetchRooms(); // Refresh the rooms list to show the updated status
+        fetchRooms(); 
     } else {
         alert(`Booking request not ${status}`);
     }
@@ -485,6 +497,93 @@ async function updatePaymentStatus(paymentId, status) {
         fetchPaymentHistory();
     }
 }
+
+async function addBill() {
+    const tenantGmail = document.getElementById('tenant-email').value;
+    const roomBill = parseFloat(document.getElementById('room-bill').value);
+    const waterBill = parseFloat(document.getElementById('water-bill').value);
+    const elecBill = parseFloat(document.getElementById('elec-bill').value);
+
+    if (!tenantGmail || isNaN(roomBill) || isNaN(waterBill) || isNaN(elecBill)) {
+        alert('Please fill all fields with valid data.');
+        return;
+    }
+
+    try {
+        const { data, error } = await connect
+            .from('bills')
+            .insert([
+                {
+                    tenant_gmail: tenantGmail,
+                    room_bill: roomBill,
+                    elec_bill: elecBill,
+                    water_bill: waterBill,
+                    status: 'Unpaid' 
+                }
+            ]);
+
+        if (error) {
+            console.error('Error inserting data:', error);
+            alert('Error inserting data: ' + error.message);
+        } else {
+            console.log('Data inserted successfully:', data);
+            alert('Bill added successfully!');
+            document.getElementById('tenant-email').value = '';
+            document.getElementById('room-bill').value = '';
+            document.getElementById('water-bill').value = '';
+            document.getElementById('elec-bill').value = '';
+        }
+    } catch (err) {
+        console.error('Unexpected error:', err);
+        alert('An unexpected error occurred. Please try again.');
+    }
+}
+
+
+async function fetchBills() {
+  const { data, error } = await connect.from('bills').select();
+  if (error) {
+    console.error('Error fetching bills:', error);
+    return;
+  }
+
+  const billsList = document.getElementById('bills-list');
+  billsList.innerHTML = '';
+
+  data.forEach((bill) => {
+    const billDiv = document.createElement('div');
+    billDiv.className = 'room';
+    billDiv.innerHTML = `
+      <h2>Tenant Gmail: ${bill.tenant_gmail}</h2>
+      <p>Room Bill: ₱${bill.room_bill}</p>
+      <p>Water Bill: ₱${bill.water_bill}</p>
+      <p>Electricity Bill: ₱${bill.elec_bill}</p>
+      <p id="status-${bill.bill_id}">Status: ${bill.status}</p>
+      <button onclick="markAsPaid(${bill.bill_id})">Mark as Paid</button>
+    `;
+    billsList.appendChild(billDiv);
+  });
+}
+
+
+async function markAsPaid(billId) {
+  const { data, error } = await connect
+    .from('bills')
+    .update({ status: 'Paid' })
+    .eq('bill_id', billId); 
+
+  if (error) {
+    console.error('Error marking bill as paid:', error);
+    alert('Error marking bill as paid');
+    return;
+  }
+
+  alert('Bill marked as paid successfully');
+  
+  document.getElementById(`status-${billId}`).innerText = 'Paid';
+}
+
+document.addEventListener('DOMContentLoaded', fetchBills);
 
 
 
