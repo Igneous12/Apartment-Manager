@@ -409,10 +409,9 @@ async function fetchFeedback() {
         const feedbackDiv = document.createElement('div');
         feedbackDiv.className = 'room';
         feedbackDiv.innerHTML = `
-            <h3>Feedback</h3>
+            <h2>Feedbacker: ${feedback.feedbacker}</h2>
             <p>${feedback.feedback_text}</p>
             <p>Date Submitted: ${feedback.date_submitted}</p>
-            <p>Feedbacker: ${feedback.feedbacker}</p>
             <button onclick="removeFeedback(${feedback.id})">Ok</button>
         `;
         const containerDiv = document.createElement('div');
