@@ -15,7 +15,7 @@
             <input type="email" id="login-email" placeholder="Email">
             <input type="password" id="login-password" placeholder="Password">
             <button onclick="login()">Login</button>
-            <p><span class="toggle-link" onclick="resetPassword()">Forgot your password?</span></p>
+            <p><span class="toggle-link" onclick="showResetPasswordForm()">Forgot your password?</span></p>
             <p>Don't have an account? <span class="toggle-link" onclick="toggleLoginRegister()">Register</span></p>
         </div>
         <div class="login-box" id="register-box" style="display: none;">
@@ -46,6 +46,12 @@
             </select>
             <button onclick="addClient()">Register</button>
             <p>Already have an account? <span class="toggle-link" onclick="toggleLoginRegister()">Login</span></p>
+        </div>
+        <div id="reset-password-box" style="display: none;">
+            <h2>Reset Password</h2>
+            <input type="email" id="reset-email" placeholder="Enter your email">
+            <button onclick="resetPassword()">Reset Password</button>
+            <p><span class="toggle-link" onclick="hideResetPasswordForm()">Back to Login</span></p>
         </div>
         <div class="display"></div>
     </div>
@@ -235,26 +241,39 @@
         }
 
         async function resetPassword() {
-            const email = prompt('Enter the email of the user whose password you want to update:');
-            if (!email) return;
+            const email = document.getElementById('reset-email').value.trim();
 
-            const newPassword = prompt('Enter the new password:');
-            if (!newPassword) return;
+            if (!email) {
+                alert('Email is required');
+                return;
+            }
 
             try {
-                const { error: updateError } = await connect
-                    .from('users')
-                    .update({ password: newPassword })
-                    .eq('email', email);
+                const { error } = await connect.auth.resetPasswordForEmail(email);
 
-                if (updateError) {
-                    throw updateError;
+                if (error) {
+                    alert('Error sending password reset email');
+                    console.error('Password reset error:', error);
+                    return;
                 }
 
-                alert('Password updated successfully');
+                alert('Password reset email sent successfully');
+                hideResetPasswordForm();
             } catch (error) {
-                console.error('Error updating password:', error.message);
+                console.error('Password reset error:', error);
+                alert('An error occurred while sending the password reset email');
             }
+        }
+
+        function showResetPasswordForm() {
+            document.querySelector('.login-box').style.display = 'none';
+            document.getElementById('reset-password-box').style.display = 'block';
+        }
+
+        function hideResetPasswordForm() {
+            document.querySelector('.login-box').style.display = 'block';
+            document.getElementById('reset-password-box').style.display = 'none';
+            document.getElementById('reset-email').value = '';
         }
 
         function logout() {
