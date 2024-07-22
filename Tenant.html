@@ -68,7 +68,6 @@
         <h3>Add New Payment</h3>
         <div class="form-container">
             <input type="number" id="payment-amount" placeholder="Amount" step="0.01" required>
-            <input type="date" id="payment-date" required>
             <select id="payment-method" required>
                 <option value="" disabled selected>Select Payment Method</option>
                 <option value="Card">Card</option>
@@ -276,36 +275,33 @@ window.onload = displayWelcomeMessage;
 
 
     async function addPayment() {
-        const amount = parseFloat(document.getElementById('payment-amount').value);
-        const date = document.getElementById('payment-date').value;
-        const method = document.getElementById('payment-method').value;
-        const tenantId = 1008;
+            const amount = parseFloat(document.getElementById('payment-amount').value);
+            const method = document.getElementById('payment-method').value;
 
-        if (isNaN(amount) || amount <= 0) {
-            alert('Please enter a valid amount.');
-            return;
+            if (isNaN(amount) || amount <= 0) {
+                alert('Please enter a valid amount.');
+                return;
+            }
+
+            if (!method) {
+                alert('Please select a payment method.');
+                return;
+            }
+
+            const { data, error } = await connect.from('payment_details').insert([
+                { amount, method, status: 'completed' }
+            ]);
+
+            if (error) {
+                console.error('Error adding payment:', error);
+                alert('Error adding payment. Please try again.');
+            } else {
+                alert('Payment added successfully!');
+                fetchPaymentHistory(); // Refresh the payment history
+                document.getElementById('payment-amount').value = '';
+                document.getElementById('payment-method').value = '';
+            }
         }
-
-        if (!method) {
-            alert('Please select a payment method.');
-            return;
-        }
-
-        const { data, error } = await connect.from('payment_details').insert([
-        { tenant_id: tenantId, amount, method, status: 'completed' }
-    ]);
-
-      if (error) {
-          console.error('Error adding payment:', error);
-          alert('Error adding payment. Please try again.');
-      } else {
-          alert('Payment added successfully!');
-          fetchPaymentHistory(); // Refresh the payment history
-          document.getElementById('payment-amount').value = '';
-          document.getElementById('payment-date').value = '';
-          document.getElementById('payment-method').value = '';
-      }
-  }
 
     async function fetchAvailableRooms() {
         const { data, error } = await connect.from('room_details').select().eq('status', 'available');
