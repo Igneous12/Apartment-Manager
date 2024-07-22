@@ -128,36 +128,48 @@
 }
 
 
-    async function updateProfile() {
-        const confirmation = confirm('Are you sure you want to update your information?');
+async function updateProfile() {
+    const confirmation = confirm('Are you sure you want to update your information?');
 
-        if (!confirmation) {
+    if (!confirmation) {
+        return;
+    }
+
+    try {
+        const { data: sessionData, error: sessionError } = await connect.auth.getSession();
+
+        if (sessionError) {
+            alert('Error getting session: ' + sessionError.message);
             return;
         }
 
-        const email = prompt('Please enter your email to confirm changes:');
-        
-        if (!email) {
-            alert('Email is required to update profile.');
+        if (!sessionData || !sessionData.session) {
+            alert('No session data available');
             return;
         }
-        
+
+        const email = sessionData.session.user.email;
+        console.log('User Email:', email); // Log the user email
+
+        // Fetch the user to ensure they exist
         const { data: user, error: fetchError } = await connect.from('users').select().eq('email', email).single();
-        
+
         if (fetchError) {
             alert('Error fetching user profile: ' + fetchError.message);
             return;
         }
-        
+
         if (!user) {
-            alert('Email not found in the database.');
+            alert('User not found in the database.');
             return;
         }
-        
+
+        // Get the updated values from input fields
         const name = document.getElementById('profile-name').value;
         const age = document.getElementById('profile-age').value;
         const phone_number = document.getElementById('profile-phone').value;
 
+        // Update the user's profile information
         const { data, error } = await connect.from('users').update({ name, age, phone_number }).eq('email', email);
 
         if (error) {
@@ -166,8 +178,13 @@
         }
 
         alert('Profile updated successfully!');
-        fetchProfile();
+        fetchProfile(); // Assuming this function exists and refreshes the profile information on the page
+    } catch (error) {
+        alert('Unexpected error: ' + error.message);
     }
+}
+
+
 
     async function fetchPaymentHistory() {
     const { data, error } = await connect.from('payment_details').select();
