@@ -151,7 +151,6 @@ async function updateProfile() {
         const email = sessionData.session.user.email;
         console.log('User Email:', email); // Log the user email
 
-        // Fetch the user to ensure they exist
         const { data: user, error: fetchError } = await connect.from('users').select().eq('email', email).single();
 
         if (fetchError) {
@@ -164,12 +163,10 @@ async function updateProfile() {
             return;
         }
 
-        // Get the updated values from input fields
         const name = document.getElementById('profile-name').value;
         const age = document.getElementById('profile-age').value;
         const phone_number = document.getElementById('profile-phone').value;
 
-        // Update the user's profile information
         const { data, error } = await connect.from('users').update({ name, age, phone_number }).eq('email', email);
 
         if (error) {
@@ -183,7 +180,6 @@ async function updateProfile() {
         alert('Unexpected error: ' + error.message);
     }
 }
-
 
 
     async function fetchPaymentHistory() {
@@ -274,60 +270,71 @@ async function updateProfile() {
     }
 
     async function bookRoom(room_num) {
-        const email = prompt('Please enter your email address:');
-        
-        if (!email) {
-            alert('Email is required to book the room.');
+    try {
+        const { data: sessionData, error: sessionError } = await connect.auth.getSession();
+
+        if (sessionError) {
+            alert('Error getting session: ' + sessionError.message);
             return;
         }
 
-        try {
-            const { data: userData, error: userError } = await connect
-                .from('users')
-                .select('email, role')
-                .eq('email', email);
-
-            if (userError) {
-                console.error('Error checking user email:', userError);
-                alert('Error checking user email.');
-                return;
-            }
-
-            if (!userData || userData.length === 0) {
-                alert('Email not found in the system. Please use a registered email.');
-                return;
-            }
-
-            const user = userData[0];
-            console.log('User role:', user.role);
-            
-            if (user.role !== 'tenant') {
-                alert('Only tenants can book rooms. Your role does not permit room booking.');
-                return;
-            }
-
-            const { data, error } = await connect
-                .from('room_details')
-                .update({ 
-                    status: 'pending',
-                    booker: email
-                })
-                .eq('room_num', room_num);
-
-            if (error) {
-                console.error('Error booking room:', error);
-                alert('Error booking room. Please try again later.');
-                return;
-            }
-
-            alert('Room booked successfully! Please wait for confirmation.');
-            fetchAvailableRooms();
-
-        } catch (error) {
-            console.error('Error during room booking:', error);
-            alert('An unexpected error occurred. Please try again later.');
+        if (!sessionData || !sessionData.session) {
+            alert('No session data available');
+            return;
         }
+
+        const email = sessionData.session.user.email;
+        console.log('User Email:', email); // Log the user email
+
+        // Fetch the user data to check the role
+        const { data: userData, error: userError } = await connect
+            .from('users')
+            .select('email, role')
+            .eq('email', email)
+            .single();
+
+        if (userError) {
+            console.error('Error checking user email:', userError);
+            alert('Error checking user email.');
+            return;
+        }
+
+        if (!userData) {
+            alert('Email not found in the system. Please use a registered email.');
+            return;
+        }
+
+        const user = userData;
+        console.log('User role:', user.role);
+
+        if (user.role !== 'tenant') {
+            alert('Only tenants can book rooms. Your role does not permit room booking.');
+            return;
+        }
+
+        const { data, error } = await connect
+            .from('room_details')
+            .update({ 
+                status: 'pending',
+                booker: email // Ensure the booker field is updated with the tenant's email
+            })
+            .eq('room_num', room_num);
+
+        if (error) {
+            console.error('Error booking room:', error);
+            alert('Error booking room. Please try again later.');
+            return;
+        }
+
+        alert('Room booked successfully! Please wait for confirmation.');
+        fetchAvailableRooms(); // Assuming this function exists to refresh the list of available rooms
+
+    } catch (error) {
+        console.error('Error during room booking:', error);
+        alert('An unexpected error occurred. Please try again later.');
     }
+}
+
 
     async function fetchMyRooms() {
     try {
