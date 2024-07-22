@@ -409,7 +409,7 @@ async function fetchFeedback() {
         const feedbackDiv = document.createElement('div');
         feedbackDiv.className = 'room';
         feedbackDiv.innerHTML = `
-            <h2>Feedbacker: ${feedback.feedbacker}</h2>
+            <h2>Respondent: ${feedback.feedbacker}</h2>
             <p>${feedback.feedback_text}</p>
             <p>Date Submitted: ${feedback.date_submitted}</p>
             <button onclick="removeFeedback(${feedback.id})">Ok</button>
@@ -440,22 +440,23 @@ async function fetchPaymentHistory() {
         console.error('Error fetching payment history:', error);
         return;
     }
+
     const paymentHistoryList = document.getElementById('payment-list');
     paymentHistoryList.innerHTML = '';
 
-        data.forEach(payment => {
-            const paymentDiv = document.createElement('div');
-            paymentDiv.className = 'room';
-            paymentDiv.innerHTML = `
-                <h3>Payment</h3>
-                <p>Date: ${payment.date || 'N/A'}</p>
-                <p>Amount: ₱${payment.amount}</p>
-                <p>Payment Method: ${payment.method}</p>
-            `;
-            paymentHistoryList.appendChild(paymentDiv);
-        });
-    
+    data.forEach(payment => {
+        const paymentDiv = document.createElement('div');
+        paymentDiv.className = 'room';
+        paymentDiv.innerHTML = `
+            <h2>Resident: ${payment.payer || 'N/A'}</h2>
+            <p>Date: ${payment.date || 'N/A'}</p>
+            <p>Amount: ₱${payment.amount}</p>
+            <p>Payment Method: ${payment.method}</p>
+        `;
+        paymentHistoryList.appendChild(paymentDiv);
+    });
 }
+
 
         function logout() {
         const { auth } = createClient(supabaseUrl, supabaseKey);

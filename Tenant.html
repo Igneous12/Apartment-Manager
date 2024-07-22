@@ -199,35 +199,47 @@ async function updateProfile() {
 }
 
 
-    async function fetchPaymentHistory() {
-    const { data, error } = await connect.from('payment_details').select();
-    
+async function fetchPaymentHistory() {
+    // Get the current session to retrieve the logged-in user's email
+    const { data: sessionData, error: sessionError } = await connect.auth.getSession();
+
+    if (sessionError) {
+        console.error('Error getting session:', sessionError);
+        return;
+    }
+
+    if (!sessionData || !sessionData.session) {
+        console.error('No session data available');
+        return;
+    }
+
+    // Extract the email from the session
+    const email = sessionData.session.user.email;
+
+    // Fetch payment details for the logged-in user
+    const { data, error } = await connect.from('payment_details').select().eq('payer', email);
+
     if (error) {
         console.error('Error fetching payment history:', error);
         return;
     }
 
-    console.log('Fetched payment history:', data); // Log data for debugging
-
     const paymentHistoryList = document.getElementById('payment-list');
     paymentHistoryList.innerHTML = '';
 
-    if (data.length === 0) {
-        paymentHistoryList.innerHTML = '<p>No payments found.</p>';
-    } else {
-        data.forEach(payment => {
-            const paymentDiv = document.createElement('div');
-            paymentDiv.className = 'room';
-            paymentDiv.innerHTML = `
-                <h3>Payment</h3>
-                <p>Date: ${payment.date || 'N/A'}</p>
-                <p>Amount: ₱${payment.amount}</p>
-                <p>Payment Method: ${payment.method}</p>
-            `;
-            paymentHistoryList.appendChild(paymentDiv);
-        });
-    }
+    data.forEach(payment => {
+        const paymentDiv = document.createElement('div');
+        paymentDiv.className = 'room';
+        paymentDiv.innerHTML = `
+            <h2>Resident: ${payment.payer || 'N/A'}</h2>
+            <p>Date: ${payment.date || 'N/A'}</p>
+            <p>Amount: ₱${payment.amount}</p>
+            <p>Payment Method: ${payment.method}</p>
+        `;
+        paymentHistoryList.appendChild(paymentDiv);
+    });
 }
+
 
 async function displayWelcomeMessage() {
     try {
@@ -274,34 +286,54 @@ async function displayWelcomeMessage() {
 window.onload = displayWelcomeMessage;
 
 
-    async function addPayment() {
-            const amount = parseFloat(document.getElementById('payment-amount').value);
-            const method = document.getElementById('payment-method').value;
+async function addPayment() {
+    const amount = parseFloat(document.getElementById('payment-amount').value);
+    const method = document.getElementById('payment-method').value;
 
-            if (isNaN(amount) || amount <= 0) {
-                alert('Please enter a valid amount.');
-                return;
-            }
+    // Get the current session
+    const { data: sessionData, error: sessionError } = await connect.auth.getSession();
 
-            if (!method) {
-                alert('Please select a payment method.');
-                return;
-            }
+    if (sessionError) {
+        console.error('Error getting session:', sessionError);
+        alert('Error getting session. Please try again.');
+        return;
+    }
 
-            const { data, error } = await connect.from('payment_details').insert([
-                { amount, method, status: 'completed' }
-            ]);
+    if (!sessionData || !sessionData.session) {
+        console.error('No session data available');
+        alert('No session data available. Please log in.');
+        return;
+    }
 
-            if (error) {
-                console.error('Error adding payment:', error);
-                alert('Error adding payment. Please try again.');
-            } else {
-                alert('Payment added successfully!');
-                fetchPaymentHistory(); // Refresh the payment history
-                document.getElementById('payment-amount').value = '';
-                document.getElementById('payment-method').value = '';
-            }
-        }
+    // Extract the email from the session
+    const email = sessionData.session.user.email;
+
+    if (isNaN(amount) || amount <= 0) {
+        alert('Please enter a valid amount.');
+        return;
+    }
+
+    if (!method) {
+        alert('Please select a payment method.');
+        return;
+    }
+
+    // Insert payment details along with the payer email
+    const { data, error } = await connect.from('payment_details').insert([
+        { amount, method, payer: email, status: 'completed' }
+    ]);
+
+    if (error) {
+        console.error('Error adding payment:', error);
+        alert('Error adding payment. Please try again.');
+    } else {
+        alert('Payment added successfully!');
+        fetchPaymentHistory(); // Refresh the payment history
+        document.getElementById('payment-amount').value = '';
+        document.getElementById('payment-method').value = '';
+    }
+}
+
 
     async function fetchAvailableRooms() {
         const { data, error } = await connect.from('room_details').select().eq('status', 'available');
