@@ -7,12 +7,30 @@
     <link href="https://fonts.googleapis.com/css2?family=Lobster&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" type="text/css" href="css.css">
+    <style>
+        #welcome-message {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: #ffffff;
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            font-size: 1.2em;
+            color: #333333;
+        }
+
+        #welcome-message span {
+            font-weight: bold;
+            color: #007bff;
+        }
+    </style>
 </head>
 <body>
     <header>
         <h1>Apartment Manager</h1>
         <div id="username">Tenant</div>
-        
+        <div id="welcome-message"></div>
     </header>
     <nav>
         <ul>
@@ -212,6 +230,50 @@ async function updateProfile() {
     }
 }
 
+async function displayWelcomeMessage() {
+    try {
+        const { data: sessionData, error: sessionError } = await connect.auth.getSession();
+
+        if (sessionError) {
+            console.error('Error getting session:', sessionError);
+            return;
+        }
+
+        if (!sessionData || !sessionData.session) {
+            console.error('No session data available');
+            return;
+        }
+
+        const email = sessionData.session.user.email;
+
+        const { data: userData, error: userError } = await connect
+            .from('users')
+            .select('name')
+            .eq('email', email)
+            .single();
+
+        if (userError) {
+            console.error('Error fetching user data:', userError);
+            return;
+        }
+
+        if (!userData) {
+            console.error('User not found');
+            return;
+        }
+
+        const userName = userData.name;
+        const welcomeMessageDiv = document.getElementById('welcome-message');
+        welcomeMessageDiv.innerHTML = `Welcome, ${userName}!`;
+
+    } catch (error) {
+        console.error('Error displaying welcome message:', error);
+    }
+}
+
+// Call the function to display the welcome message when the page loads
+window.onload = displayWelcomeMessage;
+
 
     async function addPayment() {
         const amount = parseFloat(document.getElementById('payment-amount').value);
@@ -397,21 +459,39 @@ async function updateProfile() {
 
 
 
-    async function submitFeedback() {
-        const feedback_text = document.getElementById('feedback-text').value;
+async function submitFeedback() {
+    const feedback_text = document.getElementById('feedback-text').value;
 
-        const { data, error } = await connect.from('feedback').insert([
-          {feedback_text, date_submitted: new Date().toISOString() }
-        ]);
+    // Get the current session
+    const { data: sessionData, error: sessionError } = await connect.auth.getSession();
 
-        if (error) {
-          console.error('Error submitting feedback:', error);
-          return;
-        }
+    if (sessionError) {
+        console.error('Error getting session:', sessionError);
+        return;
+    }
 
-        document.getElementById('feedback-text').value = '';
-        alert('Feedback submitted successfully!');
-      }
+    if (!sessionData || !sessionData.session) {
+        console.error('No session data available');
+        return;
+    }
+
+    // Extract the email from the session
+    const email = sessionData.session.user.email;
+
+    // Insert feedback along with the feedbacker email
+    const { data, error } = await connect.from('feedback').insert([
+        { feedback_text, date_submitted: new Date().toISOString(), feedbacker: email }
+    ]);
+
+    if (error) {
+        console.error('Error submitting feedback:', error);
+        return;
+    }
+
+    document.getElementById('feedback-text').value = '';
+    alert('Feedback submitted successfully!');
+}
+
 
     function logout() {
         const { auth } = createClient(supabaseUrl, supabaseKey);

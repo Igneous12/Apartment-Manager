@@ -412,6 +412,7 @@ async function fetchFeedback() {
             <h3>Feedback</h3>
             <p>${feedback.feedback_text}</p>
             <p>Date Submitted: ${feedback.date_submitted}</p>
+            <p>Feedbacker: ${feedback.feedbacker}</p>
             <button onclick="removeFeedback(${feedback.id})">Ok</button>
         `;
         const containerDiv = document.createElement('div');
@@ -420,6 +421,7 @@ async function fetchFeedback() {
         feedbackList.appendChild(containerDiv);
     });
 }
+
 
 async function removeFeedback(feedbackId) {
     const { data, error } = await connect.from('feedback').delete().eq('id', feedbackId);
