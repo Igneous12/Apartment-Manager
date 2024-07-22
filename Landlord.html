@@ -455,7 +455,7 @@ async function fetchPaymentHistory() {
             <p>Status: ${payment.status}</p>
         `;
 
-        if (payment.status === 'pending') {
+        if (payment.status === 'Pending') {
             const receivedButton = document.createElement('button');
             receivedButton.innerText = "Received";
             receivedButton.addEventListener('click', () => updatePaymentStatus(payment.id, 'Received'));
