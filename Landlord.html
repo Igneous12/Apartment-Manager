@@ -452,10 +452,40 @@ async function fetchPaymentHistory() {
             <p>Date: ${payment.date || 'N/A'}</p>
             <p>Amount: ₱${payment.amount}</p>
             <p>Payment Method: ${payment.method}</p>
+            <p>Status: ${payment.status}</p>
         `;
+
+        if (payment.status === 'pending') {
+            const receivedButton = document.createElement('button');
+            receivedButton.innerText = "Received";
+            receivedButton.addEventListener('click', () => updatePaymentStatus(payment.id, 'Received'));
+            paymentDiv.appendChild(receivedButton);
+
+            const notReceivedButton = document.createElement('button');
+            notReceivedButton.innerText = "Not Received";
+            notReceivedButton.addEventListener('click', () => updatePaymentStatus(payment.id, 'Not Received'));
+            paymentDiv.appendChild(notReceivedButton);
+        }
+
         paymentHistoryList.appendChild(paymentDiv);
     });
 }
+
+async function updatePaymentStatus(paymentId, status) {
+    const confirmation = confirm(`Are you sure you want to mark this payment as ${status}?`);
+    if (confirmation) {
+        const { data, error } = await connect.from('payment_details').update({ status: status }).eq('id', paymentId);
+        if (error) {
+            console.error('Error updating payment status:', error);
+            alert(`Error updating payment status to ${status}`);
+            return;
+        }
+
+        alert(`Payment status updated to ${status}`);
+        fetchPaymentHistory();
+    }
+}
+
 
 
         function logout() {

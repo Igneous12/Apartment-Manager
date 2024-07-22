@@ -235,6 +235,7 @@ async function fetchPaymentHistory() {
             <p>Date: ${payment.date || 'N/A'}</p>
             <p>Amount: ₱${payment.amount}</p>
             <p>Payment Method: ${payment.method}</p>
+            <p>Status: ${payment.status}</p>
         `;
         paymentHistoryList.appendChild(paymentDiv);
     });
@@ -320,7 +321,7 @@ async function addPayment() {
 
     // Insert payment details along with the payer email
     const { data, error } = await connect.from('payment_details').insert([
-        { amount, method, payer: email, status: 'completed' }
+        { amount, method, payer: email, status: 'Pending' }
     ]);
 
     if (error) {
